@@ -35,7 +35,9 @@ function jwtMiddleware() {
                 '/teacher/Save_Teacher_Qualification',
                 '/teacher/Save_Teacher_Experience',
                 '/teacher/Get_Teacher_Qualifications_By_TeacherID',
-                '/teacher/Get_Teacher_Experience_By_TeacherID'
+                '/teacher/Get_Teacher_Experience_By_TeacherID',
+                '/teacher/Delete_Teacher_Qualification',
+                '/teacher/Delete_Teacher_Experience'
             ];
             
             if (
@@ -46,6 +48,8 @@ function jwtMiddleware() {
                 path.startsWith('/teacher/Save_Teacher_Experience') ||
                 path.startsWith('/teacher/Get_Teacher_Qualifications_By_TeacherID') ||
                 path.startsWith('/teacher/Get_Teacher_Experience_By_TeacherID') ||
+                path.startsWith('/teacher/Delete_Teacher_Qualification') ||
+                path.startsWith('/teacher/Delete_Teacher_Experience') ||
                 path.startsWith('/s3/')
             ) {
                 console.log('JWT Skip - Public Route:', path);

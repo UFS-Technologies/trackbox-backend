@@ -292,4 +292,22 @@ router.get('/Get_Teacher_Experience_By_TeacherID/:teacher_Id', async (req, res, 
     }
 });
 
+router.delete('/Delete_Teacher_Qualification/:Qualification_ID/:Teacher_ID', async (req, res, next) => {
+    try {
+        const rows = await teacher.Delete_Teacher_Qualification(req.params.Qualification_ID, req.params.Teacher_ID);
+        res.json(rows);
+    } catch (e) {
+        res.status(500).json({ success: false, message: 'Failed to delete qualification', error: e.message });
+    }
+});
+
+router.delete('/Delete_Teacher_Experience/:Experience_ID/:Teacher_ID', async (req, res, next) => {
+    try {
+        const rows = await teacher.Delete_Teacher_Experience(req.params.Experience_ID, req.params.Teacher_ID);
+        res.json(rows);
+    } catch (e) {
+        res.status(500).json({ success: false, message: 'Failed to delete experience', error: e.message });
+    }
+});
+
 module.exports = router;

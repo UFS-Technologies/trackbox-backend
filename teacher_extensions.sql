@@ -98,3 +98,33 @@ BEGIN
     SELECT * FROM `TeacherExperience` WHERE `Teacher_ID` = p_Teacher_ID ORDER BY `Created_At` DESC;
 END ;;
 DELIMITER ;
+
+-- 7. Stored Procedure: Delete_Teacher_Qualification
+DELIMITER ;;
+DROP PROCEDURE IF EXISTS `Delete_Teacher_Qualification`;;
+CREATE PROCEDURE `Delete_Teacher_Qualification`(
+    IN p_Qualification_ID INT,
+    IN p_Teacher_ID INT
+)
+BEGIN
+    DELETE FROM `TeacherQualifications` 
+    WHERE `Qualification_ID` = p_Qualification_ID AND `Teacher_ID` = p_Teacher_ID;
+    
+    SELECT * FROM `TeacherQualifications` WHERE `Teacher_ID` = p_Teacher_ID;
+END ;;
+DELIMITER ;
+
+-- 8. Stored Procedure: Delete_Teacher_Experience
+DELIMITER ;;
+DROP PROCEDURE IF EXISTS `Delete_Teacher_Experience`;;
+CREATE PROCEDURE `Delete_Teacher_Experience`(
+    IN p_Experience_ID INT,
+    IN p_Teacher_ID INT
+)
+BEGIN
+    DELETE FROM `TeacherExperience` 
+    WHERE `Experience_ID` = p_Experience_ID AND `Teacher_ID` = p_Teacher_ID;
+    
+    SELECT * FROM `TeacherExperience` WHERE `Teacher_ID` = p_Teacher_ID;
+END ;;
+DELIMITER ;

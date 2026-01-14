@@ -91,5 +91,11 @@ var teacher =
     Get_Teacher_Experience_By_TeacherID: async function (teacher_Id_) {
         return executeTransaction('Get_Teacher_Experience_By_TeacherID', [teacher_Id_]);
     },
+    Delete_Teacher_Qualification: async function (qualification_id, teacher_id) {
+        return executeTransaction('Delete_Teacher_Qualification', [qualification_id, teacher_id]);
+    },
+    Delete_Teacher_Experience: async function (experience_id, teacher_id) {
+        return executeTransaction('Delete_Teacher_Experience', [experience_id, teacher_id]);
+    },
 };
 module.exports = teacher;
