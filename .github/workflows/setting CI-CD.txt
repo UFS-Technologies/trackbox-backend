@@ -1,0 +1,198 @@
+Here's a detailed guide on setting up CI/CD to deploy an application from GitHub to an EC2 instance using GitHub Actions.
+
+### Step 1: Set Up Your EC2 Instance
+
+1. **Ensure EC2 is configured for SSH access**:
+   - If you haven’t already, make sure your EC2 instance’s security group allows inbound SSH connections on port `22` and any necessary application port (in this case, `3520`).
+   
+2. **Install Docker**:
+   - SSH into your EC2 instance and install Docker:
+     ```bash
+     sudo apt update
+     sudo apt install -y docker.io
+     sudo systemctl start docker
+     sudo systemctl enable docker
+     ```
+   - Add your user to the Docker group to avoid using `sudo` for Docker commands:
+     ```bash
+     sudo usermod -aG docker $USER
+     ```
+
+3. **Install Git**:
+   - If not installed, run:
+     ```bash
+     sudo apt install -y git
+     ```
+
+### Step 2: Configure GitHub Secrets and Variables
+
+1. **Navigate to Repository Settings**:
+   - Go to your GitHub repository.
+   - Select **Settings** > **Secrets and variables** > **Actions**.
+
+2. **Add GitHub Secrets**:
+   - **`GH_TOKEN`**: This token is used to authenticate GitHub Actions and allows access to your code.
+      - Go to **Settings** > **Developer Settings** > **Personal Access Tokens** > **Tokens (classic)**.
+      - Click **Generate new token**, give it a name, and select permissions like `repo` (for repository access).
+      - Copy the generated token and go back to your GitHub repository secrets, then add it as `GH_TOKEN`.
+
+   - **`EC2_SSH_PRIVATE_KEY`**: Copy the private key content of your `.pem` file.
+     - On your local machine, open your key file (replace `your-key.pem` with the path to your `.pem` file):
+       ```bash
+       cat your-key.pem
+       ```
+     - Copy the contents and add it as a secret named `EC2_SSH_PRIVATE_KEY`.
+
+   - **`EC2_HOST`**: This is the public IP address or DNS of your EC2 instance.
+     - Add your EC2 instance’s public IP address or DNS as a secret named `EC2_HOST`.
+
+### Step 3: Create the GitHub Actions Workflow File
+
+Place the provided workflow file in `.github/workflows/deploy.yml` in your repository.
+
+### Step 4: Understand and Adjust Workflow Steps
+
+1. **Checkout Code**:
+   - This step checks out your code from GitHub, using the `GH_TOKEN` you set up to authenticate.
+
+2. **Setup Node.js**:
+   - Sets up Node.js version 20 and caches `npm` to speed up installs.
+
+3. **Install Dependencies**:
+   - Installs Node dependencies using `npm ci` to ensure a clean installation each time.
+
+4. **Run Tests (Optional)**:
+   - You can enable the `npm test` step to run automated tests by setting `if: true`.
+
+5. **Configure SSH**:
+   - Creates an SSH agent and loads your `EC2_SSH_PRIVATE_KEY` for secure access to the EC2 instance.
+
+6. **Deploy to EC2**:
+   - Connects via SSH, navigates to the project directory, stops any running Docker containers on port `3520`, fetches the latest code, and rebuilds the Docker image.
+   - If there are any previous `breffni` containers, they are stopped and removed.
+   - Runs the Docker container and verifies the application is running on port `3520`.
+
+7. **Cleanup SSH Key**:
+   - Always cleans up the SSH agent and key after the job completes.
+
+### Step 5: Push Code to `prod` Branch
+
+1. **Push code** to the `prod` branch in your GitHub repository.
+2. This will trigger the GitHub Actions workflow to run and deploy the latest code to your EC2 instance.
+
+### Optional: Test the Application Access
+
+Once the deployment completes successfully, you should be able to access the application on `http://<EC2_PUBLIC_IP>:3520`.
+
+This CI/CD workflow enables you to automate deployments directly to your EC2 instance upon code updates in the `prod` branch, ensuring continuous delivery of new features and improvements. Let me know if you'd like more details on specific steps!
+
+
+////////////////////// deploy.yml
+
+name: CI/CD to EC2
+
+on:
+  push:
+    branches: [ "prod" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GH_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run tests
+      run: npm test
+      if: false
+
+    - name: Configure SSH
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_SSH_PRIVATE_KEY }}" > ~/.ssh/ec2_key.pem
+        chmod 600 ~/.ssh/ec2_key.pem
+        eval $(ssh-agent -s)
+        ssh-add ~/.ssh/ec2_key.pem
+        ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+    - name: Deploy to EC2
+      env:
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+      run: |
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/ec2_key.pem ubuntu@$EC2_HOST '
+          set -e
+          
+          echo "Navigating to project directory..."
+          cd ~/Briffni-Backend/
+          
+          echo "Checking for processes using port 3520..."
+          if sudo lsof -i :3520; then
+            echo "Killing processes on port 3520..."
+            sudo lsof -i :3520 | awk "NR!=1 {print \$2}" | xargs -r sudo kill -9
+          fi
+          
+          echo "Stopping all containers with name pattern breffni..."
+          docker ps -a | grep "breffni" | awk "{print \$1}" | xargs -r docker stop
+          
+          echo "Removing all containers with name pattern breffni..."
+          docker ps -a | grep "breffni" | awk "{print \$1}" | xargs -r docker rm -f
+          
+          echo "Fetching latest changes..."
+          git fetch origin prod
+          git reset --hard origin/prod
+          
+          echo "Building new Docker image..."
+          docker build --no-cache -t breffni:latest . || exit 1
+          
+          echo "Running new container..."
+          docker run -d \
+            --name breffni \
+            --restart unless-stopped \
+            -p 3520:3520 \
+            breffni:latest
+          
+          echo "Waiting for container to start..."
+          sleep 10
+          
+          echo "Verifying container status..."
+          if ! docker ps | grep -q breffni; then
+            echo "Container failed to start"
+            docker logs breffni
+            exit 1
+          fi
+          
+          echo "Checking if application is responding on port 3520..."
+          if ! timeout 30s bash -c "until curl -s http://localhost:3520 > /dev/null; do sleep 1; done"; then
+            echo "Application failed to respond on port 3520"
+            docker logs breffni
+            exit 1
+          fi
+          
+          echo "Cleaning up old Docker images..."
+          docker image prune -a --force --filter "until=24h"
+          
+          echo "Deployment successful! Container details:"
+          docker ps | grep breffni
+          echo "Container logs:"
+          docker logs breffni --tail 50
+        '
+
+    - name: Cleanup SSH key
+      if: always()
+      run: |
+        eval $(ssh-agent -k)
+        rm -rf ~/.ssh/ec2_key.pem

@@ -1,0 +1,15 @@
+Connecting to database...
+Connected.
+Creating tables...
+Tables created.
+Creating stored procedures...
+- Save_Teacher_Qualification
+- Get_Teacher_Qualifications_By_TeacherID
+- Save_Teacher_Experience
+- Get_Teacher_Experience_By_TeacherID
+Stored procedures created.
+Verifying...
+Tables in DB: ["teacher_time_slot","teacherexperience","teacherqualifications"]
+SPs in DB: ["Get_Report_LiveClasses_By_BatchAndTeacher","Get_Student_TimeSlots_By_TeacherID","Get_teacherBatch_of_oneOnOne","Get_teachers","Get_Teachers_By_Course","Get_Teacher_courses","Get_Teacher_courses_With_Batch","Get_Teacher_Experience_By_TeacherID","Get_Teacher_Qualifications_By_TeacherID","Get_Teacher_Students","Get_Teacher_Timing","Save_Teacher_Experience","Save_Teacher_Qualification"]
+
+All actions completed successfully.

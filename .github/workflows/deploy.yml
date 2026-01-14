@@ -1,0 +1,56 @@
+name: Deploy Backend to DigitalOcean with PM2
+
+on:
+  push:
+    branches: [ "prod" ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        eval "$(ssh-agent -s)"
+        ssh-add ~/.ssh/id_rsa
+        ssh-keyscan -H 174.138.123.156 >> ~/.ssh/known_hosts
+
+    - name: Deploy to DigitalOcean
+      env:
+        DO_HOST: 174.138.123.156
+      run: |
+        ssh -i ~/.ssh/id_rsa root@$DO_HOST "
+          set -e
+          
+          cd /root/Briffni-Backend/
+          
+          # Pull latest code from prod branch
+          git pull origin prod
+          
+          # Install dependencies
+          npm install
+          
+          # Stop all PM2 processes
+          pm2 stop all
+          pm2 delete all
+          
+          # Clean up PM2 and start fresh
+          pm2 flush
+          pm2 reset all
+          
+          # Start new PM2 process
+          pm2 start app.js --name breffni-backend
+          
+          # Save new PM2 process list
+          pm2 save
+        "
+
+    - name: Cleanup SSH key
+      if: always()
+      run: rm -rf ~/.ssh/id_rsa
