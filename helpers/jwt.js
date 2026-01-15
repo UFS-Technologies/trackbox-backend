@@ -23,12 +23,14 @@ const createErrorResponse = (status, message) => ({
 function jwtMiddleware() {
     return async (req, res, next) => {
         try {
-            const path = req.path || req.url;
-            console.log('JWT Check Path:', path);
+            const originalPath = req.path || req.url;
+            const path = originalPath.replace(/\/+/g, '/');
+            console.log('JWT Check Path:', path, 'Original:', originalPath);
             // Public routes exemption
             const publicPaths = [
                 '/Login/Login_Check',
                 '/Login/Student_Login_Check',
+                '/Student_Login_Check',
                 '/Login/Check_User_Exist',
                 '/student/Save_student',
                 '/student/login',
@@ -46,6 +48,7 @@ function jwtMiddleware() {
                 publicPaths.includes(path) ||
                 path === '/' ||
                 path.startsWith('/Login/') ||
+                path.startsWith('/Student_Login_Check') ||
                 path.startsWith('/teacher/Save_Teacher_Qualification') ||
                 path.startsWith('/teacher/Save_Teacher_Experience') ||
                 path.startsWith('/teacher/Get_Teacher_Qualifications_By_TeacherID') ||
@@ -54,7 +57,8 @@ function jwtMiddleware() {
                 path.startsWith('/teacher/Delete_Teacher_Experience') ||
                 path.startsWith('/teacher/Edit_Teacher_Qualification') ||
                 path.startsWith('/teacher/Edit_Teacher_Experience') ||
-                path.startsWith('/s3/')
+                path.startsWith('/s3/') ||
+                path.startsWith('/r2/')
             ) {
                 console.log('JWT Skip - Public Route:', path);
                 return next();

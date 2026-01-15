@@ -27,7 +27,7 @@ const BatchRouter = require('./routes/Batch');
 const ModuleRouter = require('./routes/course_module');
 const chatRouter = require('./routes/chat');
 const paymentRouter = require('./routes/payment');
-const s3Router = require('./routes/s3');
+const r2Router = require('./routes/r2');
 
 // Import cron jobs
 require('./helpers/croneJobs');
@@ -68,6 +68,23 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Middleware to normalize URLs and handle redundant slashes
+app.use((req, res, next) => {
+  const originalUrl = req.url;
+  // Normalize redundant slashes
+  req.url = req.url.replace(/\/+/g, '/');
+
+  // Handle specific case where /Login prefix might be missing but double slash was used
+  if (req.url === '/Student_Login_Check') {
+    req.url = '/Login/Student_Login_Check';
+  }
+
+  if (originalUrl !== req.url) {
+    console.log(`URL Normalized: ${originalUrl} -> ${req.url}`);
+  }
+  next();
+});
+
 // Routes
 app.use('/', indexRouter);
 app.use('/Login', loginRouter);
@@ -85,7 +102,8 @@ app.use('/Batch', BatchRouter);
 app.use('/Module', ModuleRouter);
 app.use('/chat', chatRouter);
 app.use('/payment', paymentRouter);
-app.use('/s3', s3Router);
+app.use('/r2', r2Router);
+app.use('/s3', r2Router); // Alias for backward compatibility
 
 // 404 Error handler
 app.use((req, res, next) => {

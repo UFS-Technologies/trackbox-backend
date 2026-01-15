@@ -16,22 +16,53 @@ global.apnsJwtToken = null;
 const admin = require("firebase-admin");
 const configPath = path.join(__dirname, "../breffini-app-firebase-adminsdk-dzxda-ca2f1a6c2b.json");
 
-try {
-  if (fs.existsSync(configPath)) {
-    const serviceAccount = require(configPath);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-    console.log("Firebase Admin SDK initialized successfully.");
-  } else {
-    console.warn("⚠️ Firebase Admin SDK config file not found. Push notifications will not work.");
+const initializeFirebase = () => {
+  try {
+    if (admin.apps.length > 0) {
+      return admin.app();
+    }
+
+    let serviceAccount;
+
+    // 1. Try environment variable
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      try {
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        console.log("Firebase Admin SDK: Using configuration from environment variable.");
+      } catch (e) {
+        console.error("❌ Error parsing FIREBASE_SERVICE_ACCOUNT environment variable:", e.message);
+      }
+    }
+
+    // 2. Try file if environment variable failed or was not provided
+    if (!serviceAccount && fs.existsSync(configPath)) {
+      serviceAccount = require(configPath);
+      console.log("Firebase Admin SDK: Using configuration from file.");
+    }
+
+    if (serviceAccount) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+      console.log("✅ Firebase Admin SDK initialized successfully.");
+    } else {
+      console.warn("⚠️ Firebase Admin SDK: No configuration found (checked environment and file). Push notifications will not work.");
+    }
+  } catch (error) {
+    console.error("❌ Error initializing Firebase Admin SDK:", error.message);
   }
-} catch (error) {
-  console.error("❌ Error initializing Firebase Admin SDK:", error.message);
-}
+};
+
+initializeFirebase();
+
+const isFirebaseInitialized = () => admin.apps.length > 0;
 
 const sendNotif = async (token, title, body, data) => {
   try {
+    if (!isFirebaseInitialized()) {
+      console.warn("⚠️ Firebase Admin SDK not initialized. Skipping sendNotif.");
+      return;
+    }
     if (!token || typeof token !== 'string') {
       throw new Error('Invalid FCM token provided');
     }
@@ -46,6 +77,7 @@ const sendNotif = async (token, title, body, data) => {
     };
     const response = await admin.messaging().send(message);
     console.log("Successfully sent message:", response);
+    return response;
   } catch (error) {
     console.error("Error sending message:", error.message);
     throw error;
@@ -55,6 +87,10 @@ const sendNotif = async (token, title, body, data) => {
 
 const subscribeToTopic = async (token, topic) => {
   try {
+    if (!isFirebaseInitialized()) {
+      console.warn("⚠️ Firebase Admin SDK not initialized. Skipping subscribeToTopic.");
+      return;
+    }
     await admin.messaging().subscribeToTopic(token, topic);
     console.log(`Successfully subscribed to topic: ${topic}`);
   } catch (error) {
@@ -64,6 +100,10 @@ const subscribeToTopic = async (token, topic) => {
 };
 const unsubscribeFromTopic = async (token, topic) => {
   try {
+    if (!isFirebaseInitialized()) {
+      console.warn("⚠️ Firebase Admin SDK not initialized. Skipping unsubscribeFromTopic.");
+      return;
+    }
     await admin.messaging().unsubscribeFromTopic(token, topic);
     console.log(`Successfully unsubscribed from topic: ${topic}`);
   } catch (error) {
@@ -76,6 +116,10 @@ const unsubscribeFromTopic = async (token, topic) => {
 const sendNotifToTopic = async (topic, title, body, data, retries = 3, delayMs = 1000, pushType = "alert") => {
   const sendWithRetry = async (attempt = 1) => {
     try {
+      if (!isFirebaseInitialized()) {
+        console.warn("⚠️ Firebase Admin SDK not initialized. Skipping sendNotifToTopic.");
+        return;
+      }
       const message = {
         notification: { title, body },
         data,
@@ -266,5 +310,6 @@ module.exports = {
   subscribeToTopic,
   unsubscribeFromTopic,
   sendNotif,
-  sendAppleNotification
+  sendAppleNotification,
+  isFirebaseInitialized
 };

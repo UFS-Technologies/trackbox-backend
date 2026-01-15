@@ -7,9 +7,11 @@ const axios = require('axios');
 const moment = require('moment-timezone');
 
 AWS.config.update({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION || "us-east-2",
+    endpoint: new AWS.Endpoint(process.env.CLOUDFLARE_R2_ENDPOINT),
+    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+    signatureVersion: 'v4',
+    region: 'auto'
 });
 
 const s3 = new AWS.S3();
@@ -30,16 +32,16 @@ async function checkAndNotifyInactiveStudents() {
     try {
         // Fetch inactive students
         const students = await executeTransaction('Get_InActive_Students', []);
-    
+
         // Filter and map students with valid phone numbers
         const studentsWithMobile = students
             .filter(student => student.Phone_Number != null && student.Phone_Number != '')
-            .map(student => ({ 
-                name: student.First_Name, 
-                mobile: student.Phone_Number, 
-                studentId: student.Student_ID 
+            .map(student => ({
+                name: student.First_Name,
+                mobile: student.Phone_Number,
+                studentId: student.Student_ID
             }));
-    
+
         for (const student of students) {
             try {
                 // Send inactivity reminder notification to the user's topic
@@ -50,13 +52,13 @@ async function checkAndNotifyInactiveStudents() {
                 };
                 const userTopic = `STD-${student.Student_ID}`;
                 await sendNotifToTopic(userTopic, "Study Reminder", `Hi ${student.First_Name}, it's been a while! Open our app and continue your learning journey.`, data);
-    
+
                 log('info', `Reminder notification sent to student: ${student.Student_ID}`);
             } catch (error) {
                 log('error', `Error sending notification to student ${student.Student_ID}:`, error);
             }
         }
-    
+
         // Send WhatsApp messages to students with mobile numbers
         for (const student of studentsWithMobile) {
             const data = {
@@ -78,7 +80,7 @@ async function checkAndNotifyInactiveStudents() {
                     ]
                 }
             };
-    
+
             try {
                 const response = await axios.post(
                     "https://graph.facebook.com/v20.0/392786753923720/messages",
@@ -143,27 +145,27 @@ async function checkAndNotifyExpiringCourses() {
     }
 }
 
-async function deleteS3Object(key) {
+async function deleteR2Object(key) {
     const params = {
-        Bucket: process.env.S3_BUCKET_NAME || 'ufsnabeelphotoalbum',
+        Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME || 'trackbox',
         Key: key
     };
     try {
         await s3.deleteObject(params).promise();
-        log('info', `Deleted S3 object: ${key}`);
+        log('info', `Deleted Cloudflare R2 object: ${key}`);
     } catch (error) {
-        log('error', `Error deleting S3 object: ${key}`, error);
+        log('error', `Error deleting Cloudflare R2 object: ${key}`, error);
         throw error;
     }
 }
 
-async function cleanupOldS3Data() {
+async function cleanupOldR2Data() {
     try {
         const records = await executeTransaction('Get_Last_Day_Recordings', []);
         console.log('records: ', records);
         for (const record of records) {
             try {
-                await deleteS3Object(record.Record_Class_Link);
+                await deleteR2Object(record.Record_Class_Link);
                 await executeTransaction('Update_LiveClass_RecordLink', [record.LiveClass_ID]);
                 log('info', `Cleaned up data for LiveClass_ID: ${record.LiveClass_ID}`);
             } catch (error) {
@@ -171,7 +173,7 @@ async function cleanupOldS3Data() {
             }
         }
     } catch (error) {
-        log('error', 'Error in cleanupOldS3Data:', error);
+        log('error', 'Error in cleanupOldR2Data:', error);
     }
 }
 
@@ -201,9 +203,9 @@ cron.schedule('0 6 * * *', async () => {
 // });
 
 
- scheduleClassNotifications();
+scheduleClassNotifications();
 
-cron.schedule('1 0 * * *', () => { 
+cron.schedule('1 0 * * *', () => {
     //  cron.schedule('*/15 * * * * *', async () => {
 
     console.log('Running daily class notification scheduler');
@@ -212,10 +214,10 @@ cron.schedule('1 0 * * *', () => {
 async function scheduleClassNotifications() {
     try {
         const todaysClasses = await executeTransaction('Get_All_Live_Class', []);
-        
+
         // Get current time in IST
         const istTime = moment().tz('Asia/Kolkata');
-        
+
         for (const classInfo of todaysClasses) {
             try {
                 if (!classInfo.start_time || !classInfo.batch_id) {
@@ -230,9 +232,9 @@ async function scheduleClassNotifications() {
                     Course_Name: `${classInfo.Course_Name || 'Class'}`,
                     timestamp: istTime.toISOString()
                 };
-                
+
                 const batchTopic = `BATCH-${classInfo.batch_id}`;
-                
+
                 // Parse class start time
                 const classStartTime = parseClassTime(classInfo.start_time);
                 if (!classStartTime || !classStartTime.isValid()) {
@@ -240,22 +242,22 @@ async function scheduleClassNotifications() {
                     continue;
                 }
                 const notificationTime = moment(classStartTime).subtract(30, 'minutes');
-                
+
                 const timeUntilClass = classStartTime.diff(istTime);
                 const timeUntilNotification = notificationTime.diff(istTime);
 
                 if (classStartTime.isAfter(istTime)) {
                     if (timeUntilNotification > 0) {
-                        setTimeout(async() => {
+                        setTimeout(async () => {
                             await sendNotification(batchTopic, classInfo, data, "30 minutes");
                             await sendBatchWhatsappNotification(classInfo.batch_id, classInfo, data, "30 minutes");
                         }, timeUntilNotification);
-                        
-                        log('info', `[IST ${istTime.format('hh:mm:ss A')}] Scheduled reminder for Batch: ${classInfo.batch_id} for ${classInfo.start_time} at ${notificationTime.format('hh:mm:ss A')}, within ${(timeUntilNotification/60000).toFixed(2)} minutes`);
+
+                        log('info', `[IST ${istTime.format('hh:mm:ss A')}] Scheduled reminder for Batch: ${classInfo.batch_id} for ${classInfo.start_time} at ${notificationTime.format('hh:mm:ss A')}, within ${(timeUntilNotification / 60000).toFixed(2)} minutes`);
                     } else if (timeUntilClass <= 30 * 60000) {
                         await sendNotification(batchTopic, classInfo, data, "soon");
                         await sendBatchWhatsappNotification(classInfo.batch_id, classInfo, data, "soon");
-                        
+
                         log('info', `[IST ${istTime.format('hh:mm:ss A')}] Sent immediate reminder for Batch: ${classInfo.batch_id}`);
                     }
                 }
@@ -271,13 +273,13 @@ async function scheduleClassNotifications() {
 // Parse class time considering IST
 function parseClassTime(timeStr) {
     if (!timeStr) return null;
-    
+
     // If timeStr is in HH:mm format
     if (typeof timeStr === 'string' && timeStr.includes(':') && timeStr.length <= 5) {
         const [hours, minutes] = timeStr.split(':');
         return moment().tz('Asia/Kolkata').hours(hours).minutes(minutes).seconds(0).milliseconds(0);
     }
-    
+
     // If timeStr is a complete date string
     return moment.tz(timeStr, 'Asia/Kolkata');
 }
@@ -299,7 +301,7 @@ async function sendNotification(topic, classInfo, data, timePhrase) {
 
 async function sendBatchWhatsappNotification(batch_id, classInfo, data, timePhrase) {
     console.log('batch_id: ', batch_id);
-    const today = new Date(); 
+    const today = new Date();
     const [hours, minutes] = classInfo.start_time.split(':');
     const classStartTime = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes);
 
@@ -312,31 +314,31 @@ async function sendBatchWhatsappNotification(batch_id, classInfo, data, timePhra
 
     const studentsList = await teacher.Get_Batch_StudentList(batch_id);
     const studentsWithMobile = studentsList
-    .filter(student => student.Phone_Number != null && student.Phone_Number != '')
-    .map(student => ({ 
-        name: student.Name,
-        mobile: student.Phone_Number,
-        countryCode: student.Country_Code || '91' // Default to '91' if no country code
-    }));
+        .filter(student => student.Phone_Number != null && student.Phone_Number != '')
+        .map(student => ({
+            name: student.Name,
+            mobile: student.Phone_Number,
+            countryCode: student.Country_Code || '91' // Default to '91' if no country code
+        }));
 
     for (let mobile of studentsWithMobile) {
         try {
             data = {
                 messaging_product: "whatsapp",
-                to: (mobile.countryCode.replace('+', '') + mobile.mobile).replace(/\D/g, ''), 
+                to: (mobile.countryCode.replace('+', '') + mobile.mobile).replace(/\D/g, ''),
                 type: "template",
                 template: {
                     name: "live__scheduled_2", // Use the template name you created
                     language: {
                         code: "en_US",
                     },
-                    components: [  
+                    components: [
                         {
                             type: "body",
                             parameters: [
                                 {
                                     type: "text",
-                                    text:mobile.name?mobile.name:'Breffni'
+                                    text: mobile.name ? mobile.name : 'Breffni'
                                 },
                                 {
                                     type: "text",
@@ -344,39 +346,39 @@ async function sendBatchWhatsappNotification(batch_id, classInfo, data, timePhra
                                 },
                                 {
                                     type: "text",
-                                    text: timePhrase 
+                                    text: timePhrase
                                 },
                                 {
                                     type: "text",
-                                    text: formattedTime 
+                                    text: formattedTime
                                 }
                             ]
                         }
                     ],
                 },
             };
-        
+
             try {
-             response = await axios.post(
+                response = await axios.post(
                     "https://graph.facebook.com/v20.0/392786753923720/messages",
                     data, {
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${process.env.WHATSAPP_BEARER_TOKEN}`,
-                        },
-                    }
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${process.env.WHATSAPP_BEARER_TOKEN}`,
+                    },
+                }
                 );
                 console.log(`WhatsApp message sent to ${mobile['mobile']}:`, response.data);
 
             } catch (error) {
-                console.error("Error sending Batch message:",mobile, error.response ? error.response.data : error.message);
+                console.error("Error sending Batch message:", mobile, error.response ? error.response.data : error.message);
             }
-        
+
         } catch (error) {
             console.log(error);
             throw error;
         }
-        
+
     }
 
 }
