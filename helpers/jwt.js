@@ -27,22 +27,24 @@ function jwtMiddleware() {
             console.log('JWT Check Path:', path);
             // Public routes exemption
             const publicPaths = [
-                '/Login/Login_Check', 
-                '/Login/Student_Login_Check', 
-                '/Login/Check_User_Exist', 
-                '/student/Save_student', 
+                '/Login/Login_Check',
+                '/Login/Student_Login_Check',
+                '/Login/Check_User_Exist',
+                '/student/Save_student',
                 '/student/login',
                 '/teacher/Save_Teacher_Qualification',
                 '/teacher/Save_Teacher_Experience',
                 '/teacher/Get_Teacher_Qualifications_By_TeacherID',
                 '/teacher/Get_Teacher_Experience_By_TeacherID',
                 '/teacher/Delete_Teacher_Qualification',
-                '/teacher/Delete_Teacher_Experience'
+                '/teacher/Delete_Teacher_Experience',
+                '/teacher/Edit_Teacher_Qualification',
+                '/teacher/Edit_Teacher_Experience'
             ];
-            
+
             if (
-                publicPaths.includes(path) || 
-                path === '/' || 
+                publicPaths.includes(path) ||
+                path === '/' ||
                 path.startsWith('/Login/') ||
                 path.startsWith('/teacher/Save_Teacher_Qualification') ||
                 path.startsWith('/teacher/Save_Teacher_Experience') ||
@@ -50,6 +52,8 @@ function jwtMiddleware() {
                 path.startsWith('/teacher/Get_Teacher_Experience_By_TeacherID') ||
                 path.startsWith('/teacher/Delete_Teacher_Qualification') ||
                 path.startsWith('/teacher/Delete_Teacher_Experience') ||
+                path.startsWith('/teacher/Edit_Teacher_Qualification') ||
+                path.startsWith('/teacher/Edit_Teacher_Experience') ||
                 path.startsWith('/s3/')
             ) {
                 console.log('JWT Skip - Public Route:', path);
@@ -63,7 +67,7 @@ function jwtMiddleware() {
             }
 
             const token = authHeader.split(' ')[1];
-            
+
             // Check token cache first
             const cachedResult = tokenCache.get(token);
             // if (cachedResult && cachedResult.expiry > Date.now()) {
@@ -90,8 +94,8 @@ function jwtMiddleware() {
             try {
                 const [userStatus] = await Promise.race([
                     executeTransaction('check_User', [userId, isStudent, token]),
-                    new Promise((_, reject) =>  
-                        
+                    new Promise((_, reject) =>
+
                         setTimeout(() => reject(new Error('Database timeout')), 15000)
                     )
                 ]);
@@ -107,10 +111,10 @@ function jwtMiddleware() {
                 // });
                 // req.userId = userId;
                 // req.isStudent = isStudent;
-          
-         
+
+
                 // Handle user status
-                
+
                 const status = (userStatus?.status || (Array.isArray(userStatus) && userStatus[0]?.status))?.trim();
                 console.log('Processed status:', status);
 
@@ -126,33 +130,33 @@ function jwtMiddleware() {
                         req.userId = userId;
                         req.isStudent = isStudent;
                         return next();
-                 
+
                     case USER_STATUS.DELETED:
                     case 'DELETED':
                     case 'User is deleted':
                         return res.status(401).json({
                             error: { message: 'Unauthorized: User account has been deleted' }
                         });
-                 
+
                     case USER_STATUS.NOT_FOUND:
                     case 'NOT_FOUND':
                     case 'User not found':
                         return res.status(401).json({
                             error: { message: 'Unauthorized: User not found' }
                         });
-                 
+
                     case USER_STATUS.INVALID_TOKEN:
                     case 'INVALID_TOKEN':
                     case 'Token is invalid':
                         return res.status(401).json({
                             error: { message: 'Unauthorized: Invalid token' }
                         });
-                 
+
                     default:
                         return res.status(500).json({
                             error: { message: `Unknown user status received: ${status}` }
                         });
-                 }
+                }
             } catch (dbError) {
                 console.log('dbError: ', dbError);
                 console.error('Database Error:', dbError);
@@ -183,8 +187,8 @@ function jwtMiddleware() {
             // Send error response
             const status = error.status || 500;
             const message = error.message || (error.error && error.error.message) || 'Internal server error';
-            
-            return res.status(status).json({ 
+
+            return res.status(status).json({
                 error: { message: message }
             });
         }

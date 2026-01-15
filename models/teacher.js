@@ -4,19 +4,19 @@ var teacher =
 {
 
     Get_Teacher_courses: async function (teacher_Id_) {
-        console.log('teacher_Id_: ', teacher_Id_); 
+        console.log('teacher_Id_: ', teacher_Id_);
         return executeTransaction('Get_Teacher_courses', [teacher_Id_]);
     },
-    Get_Teacher_courses_With_Batch : async function (teacher_Id_) {
+    Get_Teacher_courses_With_Batch: async function (teacher_Id_) {
         return executeTransaction('Get_Teacher_courses_With_Batch ', [teacher_Id_]);
     },
-    Get_Teacher_Students : async function (teacher_Id_,courseId) {
-        return executeTransaction('Get_Teacher_Students ', [teacher_Id_,courseId]);
+    Get_Teacher_Students: async function (teacher_Id_, courseId) {
+        return executeTransaction('Get_Teacher_Students ', [teacher_Id_, courseId]);
     },
-    Get_teacherBatch_of_oneOnOne : async function (teacher_Id_) {
+    Get_teacherBatch_of_oneOnOne: async function (teacher_Id_) {
         return executeTransaction('Get_teacherBatch_of_oneOnOne ', [teacher_Id_]);
     },
-    
+
     Get_OnGoing_liveClass: async function (teacher_Id_) {
         return executeTransaction('Get_OnGoing_liveClass', [teacher_Id_]);
     },
@@ -60,7 +60,7 @@ var teacher =
             Liveclass.Record_Class_Link,
         ]);
     },
-    
+
     Update_Record_Class_By_Link: async function (Liveclass) {
         return executeTransaction('Update_Record_Class_By_Link', [
             Liveclass.LiveClass_Link,
@@ -96,6 +96,24 @@ var teacher =
     },
     Delete_Teacher_Experience: async function (experience_id, teacher_id) {
         return executeTransaction('Delete_Teacher_Experience', [experience_id, teacher_id]);
+    },
+    Edit_Teacher_Qualification: async function (qualification) {
+        return executeTransaction('Edit_Teacher_Qualification', [
+            qualification.Qualification_ID,
+            qualification.Teacher_ID,
+            qualification.Course_Name,
+            qualification.Institution_Name,
+            qualification.Passout_Date
+        ]);
+    },
+    Edit_Teacher_Experience: async function (experience) {
+        return executeTransaction('Edit_Teacher_Experience', [
+            experience.Experience_ID,
+            experience.Teacher_ID,
+            experience.Job_Role,
+            experience.Organization_Name,
+            experience.Years_Of_Experience
+        ]);
     },
 };
 module.exports = teacher;

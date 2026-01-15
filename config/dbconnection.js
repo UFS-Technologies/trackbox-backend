@@ -9,15 +9,16 @@ var connection = mysql.createPool({
     //  user: "root",
     //  password: "@MuFsPwd123",
     //  database: "Breffni_Demo",
-//      host: '49.13.87.182',
-  //  user: 'root',
-  //  password: 'p8ss144t7m4', 
-   // database: "trackbox_brfini_new_db",
+    //      host: '49.13.87.182',
+    //  user: 'root',
+    //  password: 'p8ss144t7m4', 
+    // database: "trackbox_brfini_new_db",
     //    host: "DESKTOP-IK6ME8M",
     // user: "root",
     // password: "root",
     // database: "attendance_db",
-   host: 'localhost',
+    // host: 'localhost',
+    host:"DESKTOP-IK6ME8M",
     user: 'root',
     password: 'root',
     database: "breffini-live",
@@ -36,7 +37,7 @@ connection.on('acquire', function (connection) {
 
 connection.on('connection', function (conn) {
     console.log('DB Connection established');
-    
+
     conn.query("SET SESSION wait_timeout=28800"); // 8 hour timeout
     conn.query("SET SESSION max_execution_time=30000"); // 30 second query timeout
 });

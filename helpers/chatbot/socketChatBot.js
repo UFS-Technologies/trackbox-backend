@@ -5,8 +5,8 @@ const { getmultipleSP, executeTransaction } = require('../sp-caller');
 const OpenAI = require('openai');
 const fuzzball = require('fuzzball');
 const openai = new OpenAI({
-     apiKey: process.env.OPENAI_ACCESS_TOKEN
-    });
+    apiKey: process.env.OPENAI_ACCESS_TOKEN
+});
 const { NlpManager } = require('node-nlp');
 
 const jwt = require('jsonwebtoken');
@@ -195,7 +195,7 @@ const handleUnauthenticatedUser = (socket, guestId, connectedUsers) => {
     let isRegistrationInitiated = false;
     // sendBotResponse(socket, room, 'Welcome back! How can I assist you ?');
 
-    socket.on('Chatbot_Question', async(data) => {
+    socket.on('Chatbot_Question', async (data) => {
         console.log(`Received question from guest ${guestId} in room ${room}:`, data.message);
         if (!isRegistrationInitiated) {
             if (data.message) {
@@ -218,7 +218,7 @@ const handleUnauthenticatedUser = (socket, guestId, connectedUsers) => {
 
 
 //****************************** */  for question 
-const processUnauthenticatedUserQuestion = async(socket, room, data) => {
+const processUnauthenticatedUserQuestion = async (socket, room, data) => {
     let preprocessedMessage = lemmatize(preprocessText(data.message));
     // if (!containsDomainKeywords(preprocessedMessage)) {
     //   var result = await generate(data.message);  // Fallback to OpenAI
@@ -246,8 +246,8 @@ const processUnauthenticatedUserQuestion = async(socket, room, data) => {
 
     if (bestMatch.score >= threshold) {
         console.log(`Matched question: "${bestMatch.question}" with score: ${bestMatch.score}`);
-        preprocessedMessage=bestMatch.question
-    } 
+        preprocessedMessage = bestMatch.question
+    }
     console.log('preprocessedMessage: ', preprocessedMessage);
     const response = await manager.process('en', preprocessedMessage);
 
@@ -258,12 +258,12 @@ const processUnauthenticatedUserQuestion = async(socket, room, data) => {
 
     } else {
 
-const payload=[{
-    type:"whatsapp",
-    Supporting_Document_Path:'https://wa.me/+918891504777?text=Hello,%20I%20have%20a%20query',
-    Content_Name: "Apologies, but I'm unable to provide an answer to this question. Is there anything else I can assist you with regarding our courses or the enrollment process? If you have any doubts, please feel free to message us on WhatsApp: ",
-    number:8891504777
-}]
+        const payload = [{
+            type: "whatsapp",
+            Supporting_Document_Path: 'https://wa.me/+918891504777?text=Hello,%20I%20have%20a%20query',
+            Content_Name: "Apologies, but I'm unable to provide an answer to this question. Is there anything else I can assist you with regarding our courses or the enrollment process? If you have any doubts, please feel free to message us on WhatsApp: ",
+            number: 8891504777
+        }]
 
 
 
@@ -273,10 +273,10 @@ const payload=[{
             payload,
             'whatsapp'
         );
-            }
+    }
 
 };
-const handleUserQuestion = async(socket, room, data, isEnrolled) => {
+const handleUserQuestion = async (socket, room, data, isEnrolled) => {
     // let preprocessedMessage = lemmatize(preprocessText(data.message));
     const userMessage = data.message;
     let bestMatch = { score: 0, intent: null, question: null };
@@ -299,18 +299,18 @@ const handleUserQuestion = async(socket, room, data, isEnrolled) => {
 
     if (bestMatch.score >= threshold) {
         console.log(`Matched question: "${bestMatch.question}" with score: ${bestMatch.score}`);
-        preprocessedMessage=bestMatch.question
+        preprocessedMessage = bestMatch.question
     } else {
-                const payload=[{
-                    type:"whatsapp",
-                    Supporting_Document_Path:'https://wa.me/+918891504777?text=Hello,%20I%20have%20a%20query',
-                    Content_Name: "I'm not aware of this. Please contact our support team for assistance",
-                    number:8891504777
-                            }]
-                 sendBotResponse( socket,room, payload,'whatsapp' );
-                  return;
+        const payload = [{
+            type: "whatsapp",
+            Supporting_Document_Path: 'https://wa.me/+918891504777?text=Hello,%20I%20have%20a%20query',
+            Content_Name: "I'm not aware of this. Please contact our support team for assistance",
+            number: 8891504777
+        }]
+        sendBotResponse(socket, room, payload, 'whatsapp');
+        return;
 
-        }
+    }
 
     const { userId } = authenticateUser(socket);
     const authHeader = socket.handshake.headers.authorization;
@@ -357,29 +357,29 @@ const handleUserQuestion = async(socket, room, data, isEnrolled) => {
 
     const response = await manager.process('en', preprocessedMessage);
     const confidenceThreshold = 0.6;
- 
+
     console.log('isEnrolled: ', isEnrolled);
     console.log('socket.userId: ', socket.userId);
 
     console.log('response.intent: ', response.intent);
-    console.log('response.score : ', response.score );
+    console.log('response.score : ', response.score);
     if (response.intent && response.intent !== 'out_of_scope' && response.score > confidenceThreshold) {
         if (response.intent.startsWith('course_material')) {
-         
+
             if (!isEnrolled) {
-                            const payload=[{
-                                type:"whatsapp",
-                                Supporting_Document_Path:'https://wa.me/+918891504777?text=Hello,%20I%20have%20a%20query',
-                                Content_Name: "I'm not aware of this. Please contact our support team for assistance",
-                                number:8891504777
-                            }]
-                        sendBotResponse(
-                            socket,
-                            room,
-                            payload,
-                            'whatsapp'
-                        );
-          
+                const payload = [{
+                    type: "whatsapp",
+                    Supporting_Document_Path: 'https://wa.me/+918891504777?text=Hello,%20I%20have%20a%20query',
+                    Content_Name: "I'm not aware of this. Please contact our support team for assistance",
+                    number: 8891504777
+                }]
+                sendBotResponse(
+                    socket,
+                    room,
+                    payload,
+                    'whatsapp'
+                );
+
                 return;
             }
 
@@ -393,7 +393,7 @@ const handleUserQuestion = async(socket, room, data, isEnrolled) => {
                 const materials = await getmultipleSP('Get_CourseContent_By_SectionAndStudent', [materialType, userId]);
                 console.log('userId: ', userId);
                 console.log('materials: ', materials);
-                const materialName=materialType.replaceAll('_', ' ').trim();
+                const materialName = materialType.replaceAll('_', ' ').trim();
                 if (materials && materials.length > 0) {
                     // const formattedResponse = formatMaterialResponse(materials, response.answer);
                     // console.log('formattedResponse: ', formattedResponse);
@@ -421,14 +421,14 @@ const handleUserQuestion = async(socket, room, data, isEnrolled) => {
             }
         } else if (response.intent.startsWith('pre_purchase_') || (response.intent.startsWith('post_purchase_') || response.intent.startsWith('app_related_') || response.intent.startsWith('general_') && isEnrolled)) {
             sendBotResponse(socket, room, response.answer);
-        }  
-        
+        }
+
         else if (response.intent === 'None') {
-            const payload=[{
-                type:"whatsapp",
-                Supporting_Document_Path:'https://wa.me/+918891504777?text=Hello,%20I%20have%20a%20query',
+            const payload = [{
+                type: "whatsapp",
+                Supporting_Document_Path: 'https://wa.me/+918891504777?text=Hello,%20I%20have%20a%20query',
                 Content_Name: "I'm not aware of this. Please contact our support team for assistance",
-                number:8891504777
+                number: 8891504777
             }]
             sendBotResponse(
                 socket,
@@ -441,17 +441,17 @@ const handleUserQuestion = async(socket, room, data, isEnrolled) => {
         }
     } else {
 
-        
-        const payload=[{
-            type:"whatsapp",
-            Supporting_Document_Path:'https://wa.me/+918891504777?text=Hello,%20I%20have%20a%20query',
+
+        const payload = [{
+            type: "whatsapp",
+            Supporting_Document_Path: 'https://wa.me/+918891504777?text=Hello,%20I%20have%20a%20query',
             Content_Name: "I'm not aware of this. Please contact our support team for assistance",
-            number:8891504777
+            number: 8891504777
         }]
-               
+
 
         sendBotResponse(
-            socket, 
+            socket,
             room,
             payload,
             'whatsapp'
@@ -463,7 +463,7 @@ const handleUserQuestion = async(socket, room, data, isEnrolled) => {
 
 
 //****************************** */
-const   sendBotResponse = (socket, room, message, type = 'text') => {
+const sendBotResponse = (socket, room, message, type = 'text') => {
     console.log('message: ', message);
     const payload = type === 'text' ? [{ Content_Name: message }] : message;
 
@@ -509,7 +509,7 @@ function removeGuestUser(guestId) {
     console.log(`Removing guest user ${guestId} from temporary storage`);
     // In a real application, you might clear any temporary data associated with this guest
 }
-const generate = async(question) => {
+const generate = async (question) => {
     try {
         const prompt = question + 'and add with some beatifull emojies in response sentance';
         const result = await geminiModel.generateContent(prompt);

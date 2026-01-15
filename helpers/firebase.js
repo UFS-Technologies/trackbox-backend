@@ -1,11 +1,12 @@
 const http2 = require('http2');
 const fs = require('fs');
+const path = require('path');
 const jwts = require('jsonwebtoken');
 
 global.apnsJwtToken = null;
 
 // const FCM = require('fcm-node')
-    
+
 // var serverKey = require('../breffini-app-firebase-adminsdk-dzxda-ca2f1a6c2b.json');
 
 // var fcm = new FCM(serverKey)
@@ -13,10 +14,21 @@ global.apnsJwtToken = null;
 // module.exports = fcm;
 
 const admin = require("firebase-admin");
-const serviceAccount = require("../breffini-app-firebase-adminsdk-dzxda-ca2f1a6c2b.json");
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+const configPath = path.join(__dirname, "../breffini-app-firebase-adminsdk-dzxda-ca2f1a6c2b.json");
+
+try {
+  if (fs.existsSync(configPath)) {
+    const serviceAccount = require(configPath);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+    console.log("Firebase Admin SDK initialized successfully.");
+  } else {
+    console.warn("⚠️ Firebase Admin SDK config file not found. Push notifications will not work.");
+  }
+} catch (error) {
+  console.error("❌ Error initializing Firebase Admin SDK:", error.message);
+}
 
 const sendNotif = async (token, title, body, data) => {
   try {
@@ -28,8 +40,8 @@ const sendNotif = async (token, title, body, data) => {
         title: title,
         body: body,
       },
-      data:data,
-      
+      data: data,
+
       token: token,
     };
     const response = await admin.messaging().send(message);
@@ -65,8 +77,8 @@ const sendNotifToTopic = async (topic, title, body, data, retries = 3, delayMs =
   const sendWithRetry = async (attempt = 1) => {
     try {
       const message = {
-        notification: { title, body }, 
-        data, 
+        notification: { title, body },
+        data,
         topic,
         android: {
           priority: "high",
@@ -74,12 +86,12 @@ const sendNotifToTopic = async (topic, title, body, data, retries = 3, delayMs =
           notification: {
             click_action: "FLUTTER_NOTIFICATION_CLICK",
             priority: "max",
-            visibility: "public" 
+            visibility: "public"
 
-          }, 
-          direct_boot_ok: true, 
+          },
+          direct_boot_ok: true,
         },
-        apns: { 
+        apns: {
           headers: {
             "apns-priority": "10", // High priority
             "apns-push-type": pushType, // "alert" for normal push, "voip" for VoIP calls
@@ -88,26 +100,26 @@ const sendNotifToTopic = async (topic, title, body, data, retries = 3, delayMs =
           payload: {
             aps: pushType === "voip"
               ? {
-                  "content-available": 1, // Required for VoIP
-                  category: "NOTIFICATION_CATEGORY",
-                  priority: 10,
-                }
+                "content-available": 1, // Required for VoIP
+                category: "NOTIFICATION_CATEGORY",
+                priority: 10,
+              }
               : {
-                  alert: {
-                    title: title,
-                    body: body, 
-                  },
-                  "content-available": 1,
-                  sound: "default",
-                  badge: 1, 
+                alert: {
+                  title: title,
+                  body: body,
                 },
-          }, 
+                "content-available": 1,
+                sound: "default",
+                badge: 1,
+              },
+          },
         },
-      };     
+      };
 
       const response = await admin.messaging().send(message);
       console.log(`✅ Notification sent successfully to topic: ${topic}`, response);
-      return response; 
+      return response;
     } catch (error) {
       if (attempt < retries) {
         console.warn(`⚠️ Retry attempt ${attempt} for topic ${topic}. Error: ${error.message}`);
@@ -118,12 +130,12 @@ const sendNotifToTopic = async (topic, title, body, data, retries = 3, delayMs =
       console.error(`❌ Failed to send notification to topic ${topic} after ${retries} attempts:`, error);
       throw error;
     }
-  };  
+  };
 
   return sendWithRetry();
 };
 const generateJwtToken = () => {
-  
+
   const TEAM_ID = process.env.APPLE_TEAM_ID;
   const KEY_ID = process.env.APPLE_KEY_ID;
   const PRIVATE_KEY = fs.readFileSync(process.env.APPLE_PRIVATE_KEY_PATH, "utf8");
@@ -133,21 +145,21 @@ const generateJwtToken = () => {
   console.log('PRIVATE_KEY_PATH:', process.env.APPLE_PRIVATE_KEY_PATH);
 
   const jwtToken = jwts.sign(
-    { 
+    {
       iss: TEAM_ID,
       iat: Math.floor(Date.now() / 1000)
-    }, 
-    PRIVATE_KEY, 
+    },
+    PRIVATE_KEY,
     {
       algorithm: "ES256",
-      header: { 
+      header: {
         alg: "ES256",
         kid: KEY_ID,
 
       },
-      expiresIn: "1h" 
+      expiresIn: "1h"
     }
-  ); 
+  );
 
   global.apnsJwtToken = jwtToken;
   console.log('Generated JWT:', jwtToken);
@@ -160,7 +172,7 @@ const getJwtToken = () => {
     console.log('token: ', "not available");
 
     return generateJwtToken();
-  }else{
+  } else {
     console.log('token: ', " available");
 
     return global.apnsJwtToken;
@@ -168,11 +180,11 @@ const getJwtToken = () => {
 };
 
 const sendAppleNotification = async (deviceToken, title, body, extraData, retryAttempt = 0) => {
-  const APNS_TOPIC = extraData.extra.Is_Student_Called==1 ? process.env.APPLE_BUNDLE_ID_STAFF : process.env.APPLE_BUNDLE_ID_STUDENT;
+  const APNS_TOPIC = extraData.extra.Is_Student_Called == 1 ? process.env.APPLE_BUNDLE_ID_STAFF : process.env.APPLE_BUNDLE_ID_STUDENT;
 
   try {
     console.log('extraData: ', extraData);
-    
+
     const jwtToken = getJwtToken();
 
     console.log('Generated JWT Token:', jwtToken);
@@ -198,8 +210,8 @@ const sendAppleNotification = async (deviceToken, title, body, extraData, retryA
           title: title,
           body: body
         },
-        "sound":"default",
-        "content-available":1
+        "sound": "default",
+        "content-available": 1
       },
       ...extraData
     });
@@ -220,18 +232,18 @@ const sendAppleNotification = async (deviceToken, title, body, extraData, retryA
         });
         request.on("end", () => {
           client.close();
-          console.log("status code **** "+statusCode);
+          console.log("status code **** " + statusCode);
 
-            if (statusCode === 403 && retryAttempt<1) {
-              console.log("Got 403 response, regenerating token and retrying...");
-              generateJwtToken();
-              sendAppleNotification(deviceToken, title, body, extraData,retryAttempt+1)
-                .then(resolve)
-                .catch(reject);
-              resolve();
-            } else {
-              resolve();
-            }
+          if (statusCode === 403 && retryAttempt < 1) {
+            console.log("Got 403 response, regenerating token and retrying...");
+            generateJwtToken();
+            sendAppleNotification(deviceToken, title, body, extraData, retryAttempt + 1)
+              .then(resolve)
+              .catch(reject);
+            resolve();
+          } else {
+            resolve();
+          }
         });
       });
 
