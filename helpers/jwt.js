@@ -44,25 +44,31 @@ function jwtMiddleware() {
                 '/teacher/Edit_Teacher_Experience'
             ];
 
-            if (
-                publicPaths.includes(path) ||
-                path === '/' ||
-                path.startsWith('/Login/') ||
-                path.startsWith('/Student_Login_Check') ||
-                path.startsWith('/teacher/Save_Teacher_Qualification') ||
-                path.startsWith('/teacher/Save_Teacher_Experience') ||
-                path.startsWith('/teacher/Get_Teacher_Qualifications_By_TeacherID') ||
-                path.startsWith('/teacher/Get_Teacher_Experience_By_TeacherID') ||
-                path.startsWith('/teacher/Delete_Teacher_Qualification') ||
-                path.startsWith('/teacher/Delete_Teacher_Experience') ||
-                path.startsWith('/teacher/Edit_Teacher_Qualification') ||
-                path.startsWith('/teacher/Edit_Teacher_Experience') ||
-                path.startsWith('/s3/') ||
-                path.startsWith('/r2/')
-            ) {
-                console.log('JWT Skip - Public Route:', path);
+            const lowerPath = path.toLowerCase().replace(/\/$/, ""); // Normalize: lowercase and remove trailing slash
+
+            const isPublic =
+                publicPaths.some(p => p.toLowerCase().replace(/\/$/, "") === lowerPath) ||
+                lowerPath === "" ||
+                lowerPath === "/" ||
+                lowerPath.startsWith("/login") ||
+                lowerPath.startsWith("/student_login_check") ||
+                lowerPath.startsWith("/teacher/save_teacher_qualification") ||
+                lowerPath.startsWith("/teacher/save_teacher_experience") ||
+                lowerPath.startsWith("/teacher/get_teacher_qualifications_by_teacherid") ||
+                lowerPath.startsWith("/teacher/get_teacher_experience_by_teacherid") ||
+                lowerPath.startsWith("/teacher/delete_teacher_qualification") ||
+                lowerPath.startsWith("/teacher/delete_teacher_experience") ||
+                lowerPath.startsWith("/teacher/edit_teacher_qualification") ||
+                lowerPath.startsWith("/teacher/edit_teacher_experience") ||
+                lowerPath.startsWith("/s3") ||
+                lowerPath.startsWith("/r2");
+
+            if (isPublic) {
+                console.log('JWT SKIP:', path);
                 return next();
             }
+
+            console.log('JWT CHECK:', path);
 
             // Extract token with early validation
             const authHeader = req.headers.authorization;

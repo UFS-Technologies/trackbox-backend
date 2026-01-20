@@ -18,7 +18,7 @@ var connection = mysql.createPool({
     // password: "root",
     // database: "attendance_db",
     // host: 'localhost',
-    host:"DESKTOP-IK6ME8M",
+    host: "DESKTOP-IK6ME8M",
     user: 'root',
     password: 'root',
     database: "breffini-live",

@@ -7,7 +7,8 @@ const r2Client = new AWS.S3({
     accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
     secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
     signatureVersion: 'v4',
-    region: 'auto'
+    region: 'auto',
+    s3ForcePathStyle: true
 });
 
 const BUCKET_NAME = process.env.CLOUDFLARE_R2_BUCKET_NAME || 'trackbox';
@@ -24,8 +25,7 @@ const getUploadSignedUrl = async (key, contentType) => {
         Bucket: BUCKET_NAME,
         Key: key,
         Expires: 300, // 5 minutes
-        ContentType: contentType,
-        ACL: 'public-read' // Cloudflare R2 supports this if configured, or it might ignore it depending on setup
+        ContentType: contentType
     };
 
     return new Promise((resolve, reject) => {

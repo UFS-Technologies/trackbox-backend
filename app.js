@@ -57,6 +57,16 @@ const initialChat = require('./helpers/chatbot/socketChatBot'); // Import the so
 initialChat(io); // Pass the server to the socket module
 
 
+// Debug Logging
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    console.log(`[DEBUG] ${req.method} ${req.url} ${res.statusCode} ${duration}ms`);
+  });
+  next();
+});
+
 // Set up view engine
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'jade');

@@ -5893,7 +5893,7 @@ CREATE DEFINER=`root`@`localhost` PROCEDURE `Insert_Login_User`(
     IN p_User_Id INT,
     IN p_Is_Student TINYINT,
     IN p_User_Type_Id INT,
-    IN p_JWT_Token VARCHAR(500)
+    IN p_JWT_Token VARCHAR(1000)
 )
 BEGIN
     DECLARE v_Login_Time VARCHAR(45);
