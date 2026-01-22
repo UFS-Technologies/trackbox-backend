@@ -61,7 +61,8 @@ function jwtMiddleware() {
                 lowerPath.startsWith("/teacher/edit_teacher_qualification") ||
                 lowerPath.startsWith("/teacher/edit_teacher_experience") ||
                 lowerPath.startsWith("/s3") ||
-                lowerPath.startsWith("/r2");
+                lowerPath.startsWith("/r2") ||
+                lowerPath.startsWith("/briffni");
 
             if (isPublic) {
                 console.log('JWT SKIP:', path);

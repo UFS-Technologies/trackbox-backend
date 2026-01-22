@@ -12,41 +12,41 @@ router.post('/login', async (req, res, next) => {
     try {
         let { email, password } = req.body;
         console.log("Student Login Attempt:", email);
-        
+
         const rows = await student.Get_Student_Login_Details(email);
-        
+
         if (!rows.length) {
             res.status(401).json({ error: { message: "Invalid Email ID/Password" } });
             return;
         }
-        
+
         const studentData = rows[0];
-        
+
         if (!studentData.Password) {
-             res.status(401).json({ error: { message: "Password not set. Please reset your password or login via OTP." } });
-             return;
+            res.status(401).json({ error: { message: "Password not set. Please reset your password or login via OTP." } });
+            return;
         }
-        
+
         const match = await bcrypt.compare(password, studentData.Password);
-        
+
         if (!match) {
-             res.status(401).json({ error: { message: "Invalid Email ID/Password" } });
-             return;
+            res.status(401).json({ error: { message: "Invalid Email ID/Password" } });
+            return;
         }
-        
+
         // Success
         const token = jwt_lib.sign({ userId: studentData.Student_ID, isStudent: 1 }, jwtSecret);
-        
+
         // Insert login session
         await executeTransaction('Insert_Login_User', [
-             studentData.Student_ID,
-             1, // Is_Student
-             0, 
-             token
+            studentData.Student_ID,
+            1, // Is_Student
+            0,
+            token
         ]);
-        
+
         res.json({ ...studentData, token });
-        
+
     } catch (error) {
         console.error("Student Login Error:", error);
         res.status(500).json({ success: false, message: "An error occurred during login.", error: error.message });
@@ -64,9 +64,9 @@ router.post('/Save_student/', async (req, res, next) => {
         }
         const rows = await student.Save_student(req.body);
         console.log('rows: ', rows);
-        console.log('rrows[0 ', rows[0]['existingUser']==0);
-        if(rows[0]['existingUser']==0){
-            if(req.body['Email']!='' && req.body['Email']) {
+        console.log('rrows[0 ', rows[0]['existingUser'] == 0);
+        if (rows[0]['existingUser'] == 0) {
+            if (req.body['Email'] != '' && req.body['Email']) {
                 try {
                     const response = await axios({
                         method: 'post',
@@ -161,8 +161,8 @@ router.post('/enroleCourse/', async (req, res, next) => {
             }
         });
 
-        const recepients = ["basilsajeev@ufstechnologies.com", "cristine@ufstechnologies.com" ]
-        
+        const recepients = ["basilsajeev@ufstechnologies.com", "cristine@ufstechnologies.com"]
+
         const msg = {
             from: "info@breffniacademy.in",
             to: recepients,
@@ -204,7 +204,7 @@ router.post('/enroleCourse/', async (req, res, next) => {
     }
     catch (e) {
         console.log('e: ', e);
-        res.status(500).json({ success: false, message:  e.message, error: e.message });
+        res.status(500).json({ success: false, message: e.message, error: e.message });
     }
 });
 router.post('/Buy_Course/', async (req, res, next) => {
@@ -226,8 +226,8 @@ router.post('/Buy_Course/', async (req, res, next) => {
             }
         });
 
-        const recepients = ["basilsajeev@ufstechnologies.com", "cristine@ufstechnologies.com" ]
-        
+        const recepients = ["basilsajeev@ufstechnologies.com", "cristine@ufstechnologies.com"]
+
         const msg = {
             from: "info@breffniacademy.in",
             to: recepients,
@@ -269,7 +269,7 @@ router.post('/Buy_Course/', async (req, res, next) => {
     }
     catch (e) {
         console.log('e: ', e);
-        res.status(500).json({ success: false, message:  e.message, error: e.message });
+        res.status(500).json({ success: false, message: e.message, error: e.message });
     }
 });
 router.post('/enroleCourseFromAdmin/', async (req, res, next) => {
@@ -292,8 +292,8 @@ router.post('/enroleCourseFromAdmin/', async (req, res, next) => {
             }
         });
 
-        const recepients = ["basilsajeev@ufstechnologies.com", "cristine@ufstechnologies.com" ]
-        
+        const recepients = ["basilsajeev@ufstechnologies.com", "cristine@ufstechnologies.com"]
+
         const msg = {
             from: "info@breffniacademy.in",
             to: recepients,
@@ -335,12 +335,12 @@ router.post('/enroleCourseFromAdmin/', async (req, res, next) => {
     }
     catch (e) {
         console.log('e: ', e);
-        res.status(500).json({ success: false, message:  e.message, error: e.message });
+        res.status(500).json({ success: false, message: e.message, error: e.message });
     }
 });
 router.get('/Search_student/', async (req, res, next) => {
     try {
-        const rows = await student.Search_student(req.query.student_Name,req.query.page,req.query.pageSize,req.query.courseId,req.query.batchId,req.query.enrollment_status);
+        const rows = await student.Search_student(req.query.student_Name, req.query.page, req.query.pageSize, req.query.courseId, req.query.batchId, req.query.enrollment_status);
         res.json(rows);
     }
     catch (e) {
@@ -369,7 +369,7 @@ router.get('/Get_student/:student_Id_?', async (req, res, next) => {
 
 router.get('/Get_Courses_By_StudentId/:student_Id_?', async (req, res, next) => {
     try {
-        const rows = await student.Get_Courses_By_StudentId(req.params.student_Id_,req.query.course_Name,req.query.priceFrom ,req.query.priceTo);
+        const rows = await student.Get_Courses_By_StudentId(req.params.student_Id_, req.query.course_Name, req.query.priceFrom, req.query.priceTo);
         res.json(rows);
     }
     catch (e) {
@@ -381,7 +381,7 @@ router.get('/GetAllCourses/', async (req, res, next) => {
     try {
         console.log('req.query.course_Type: ', req.query.course_Type);
         console.log('req.userId: ', req.userId);
-        const rows = await student.GetAllCourses(req.query.course_Type, req.userId,req.query.priceFrom ,req.query.priceTo);
+        const rows = await student.GetAllCourses(req.query.course_Type, req.userId, req.query.priceFrom, req.query.priceTo);
         res.json(rows);
     }
     catch (e) {
@@ -399,7 +399,7 @@ router.get('/Search_Occupations/', async (req, res, next) => {
 });
 router.post('/Delete_Student_Account/:student_Id?', async (req, res, next) => {
     try {
-        const rows = await student.Delete_Student_Account(req.params.student_Id?req.params.student_Id:req.userId);
+        const rows = await student.Delete_Student_Account(req.params.student_Id ? req.params.student_Id : req.userId);
         res.json(rows);
     }
     catch (e) {
@@ -408,7 +408,7 @@ router.post('/Delete_Student_Account/:student_Id?', async (req, res, next) => {
 });
 router.get('/CheckStudentEnrollment/?:course_Id', async (req, res, next) => {
     try {
-        const rows = await student.CheckStudentEnrollment(req.userId,req.params.course_Id);
+        const rows = await student.CheckStudentEnrollment(req.userId, req.params.course_Id);
         res.json(rows);
     }
     catch (e) {
@@ -440,7 +440,7 @@ router.post('/SaveChatMessage/', async (req, res, next) => {
         res.json(rows);
 
 
-        
+
     }
     catch (e) {
         res.status(500).json({ success: false, message: 'Failed to save message', error: e.message });
@@ -470,7 +470,7 @@ router.post('/Insert_Student_Exam_Result/', async (req, res, next) => {
 router.post('/Update_Student_LastOnline/', async (req, res, next) => {
     try {
         console.log('req.body: ', req.body);
-        const rows = await student.Update_Student_LastOnline(req.userId,req.body.Last_Online);
+        const rows = await student.Update_Student_LastOnline(req.userId, req.body.Last_Online);
         res.json(rows);
     }
     catch (e) {
@@ -499,7 +499,7 @@ router.get('/delete_Student_Exam_result/:StudentExam_ID?', async (req, res, next
 router.get('/Get_Live_Classes_By_CourseId/:course_Id_?/:Batch_Id_?', async (req, res, next) => {
     try {
         console.log('req.userId: ', req.userId);
-        const rows = await student.Get_Live_Classes_By_CourseId(req.params.course_Id_,req.userId,req.params.Batch_Id_);
+        const rows = await student.Get_Live_Classes_By_CourseId(req.params.course_Id_, req.userId, req.params.Batch_Id_);
         res.json(rows);
     }
     catch (e) {
@@ -509,7 +509,7 @@ router.get('/Get_Live_Classes_By_CourseId/:course_Id_?/:Batch_Id_?', async (req,
 router.get('/Get_Recorded_LiveClasses/:Batch_Id_?', async (req, res, next) => {
     try {
         console.log('req.userId: ', req.userId);
-        const rows = await student.Get_Recorded_LiveClasses(req.userId,req.params.Batch_Id_);
+        const rows = await student.Get_Recorded_LiveClasses(req.userId, req.params.Batch_Id_);
         res.json(rows);
     }
     catch (e) {
@@ -519,7 +519,7 @@ router.get('/Get_Recorded_LiveClasses/:Batch_Id_?', async (req, res, next) => {
 router.get('/Get_Student_Exam_Results', async (req, res) => {
     const { studentId, courseId } = req.query; // Assuming you're passing the IDs as query parameters
     try {
-        const results = await student.Get_Student_Exam_Results(studentId,courseId);
+        const results = await student.Get_Student_Exam_Results(studentId, courseId);
 
         res.json(results);
     } catch (error) {
@@ -548,7 +548,7 @@ router.get('/Get_Available_Hod/', async (req, res, next) => {
 });
 router.get('/Generate_certificate/:StudentCourse_ID/:value', async (req, res, next) => {
     try {
-        const rows = await student.Generate_certificate(req.params.StudentCourse_ID,req.params.value);
+        const rows = await student.Generate_certificate(req.params.StudentCourse_ID, req.params.value);
         res.json(rows);
     }
     catch (e) {
@@ -596,7 +596,7 @@ router.get('/Get_AppInfo_List/', async (req, res, next) => {
         const filters = {
             isStudent: req.query.isStudent,
             appVersion: req.query.appVersion || '',
-            nameSearch: req.query.nameSearch || '', 
+            nameSearch: req.query.nameSearch || '',
             fromDate: req.query.fromDate || null,
             toDate: req.query.toDate || null,
             isBatteryOptimized: req.query.isBatteryOptimized || -1, // New battery optimization filter
@@ -610,5 +610,38 @@ router.get('/Get_AppInfo_List/', async (req, res, next) => {
         res.status(500).json({ success: false, message: 'Failed to get app info list', error: e.message });
     }
 });
+
+router.post('/Save_Exam_Result/', async (req, res, next) => {
+    try {
+        const examResult = {
+            student_id: req.body.student_id,
+            course_id: req.body.course_id,
+            exam_data_id: req.body.exam_data_id,
+            total_mark: req.body.total_mark,
+            pass_mark: req.body.pass_mark,
+            obtained_mark: req.body.obtained_mark
+        };
+        const rows = await student.Save_Exam_Result(examResult);
+        res.json(rows);
+    }
+    catch (e) {
+        console.log('Error saving exam result: ', e);
+        res.status(500).json({ success: false, message: 'Failed to save exam result', error: e.message });
+    }
+});
+
+router.get('/Get_Exam_Results/:student_id', async (req, res, next) => {
+    try {
+        const student_id = req.params.student_id;
+        const course_id = req.query.course_id || null;
+        const rows = await student.Get_Exam_Results_By_Student(student_id, course_id);
+        res.json(rows);
+    }
+    catch (e) {
+        console.log('Error getting exam results: ', e);
+        res.status(500).json({ success: false, message: 'Failed to get exam results', error: e.message });
+    }
+});
+
 module.exports = router;
- 
+

@@ -96,6 +96,7 @@ router.post("/Student_Login_Check", async (req, res, next) => {
 
         const rows = await Student.Get_Student_Login_Details(email);
 
+        console.log('rows    : ' + rows)
         if (!rows.length) {
             res.status(401).json({ error: { message: "Invalid Email ID/Password" } });
             return;
@@ -103,6 +104,7 @@ router.post("/Student_Login_Check", async (req, res, next) => {
 
         const studentData = rows[0];
 
+        console.log('studentData    : ' + studentData)
         // Verify Password
         if (!studentData.Password) {
             res.status(401).json({ error: { message: "Password not set. Please reset your password or login via OTP." } });
@@ -110,7 +112,7 @@ router.post("/Student_Login_Check", async (req, res, next) => {
         }
 
         const match = await bcrypt.compare(password, studentData.Password);
-
+        console.log('match: ' + match)
         if (!match) {
             res.status(401).json({ error: { message: "Invalid Email ID/Password" } });
             return;
@@ -118,7 +120,7 @@ router.post("/Student_Login_Check", async (req, res, next) => {
 
         // Success
         const token = jwt.sign({ userId: studentData.Student_ID, isStudent: 1 }, jwtSecret);
-
+        console.log('token    : ' + token)
         // Insert login session
         await executeTransaction('Insert_Login_User', [
             studentData.Student_ID,

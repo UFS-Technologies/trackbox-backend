@@ -46,3 +46,9 @@ Registration Response: [{"Student_ID":330,"Source":"Student","existingUser":0}]
 2. Attempting Login...
 Login Response: {"Student_ID":330,"First_Name":"Test","Last_Name":"Student","Email":"teststudent_1768816680037@example.com","Phone_Number":"9975193935","Password":"$2b$10$5.0ZhUXUqXUGTbICWaQ4Z.OYA.TSSGwInUJSx4x66sqvi07//JtEG","Salt":"$2b$10$5.0ZhUXUqXUGTbICWaQ4Z.","Delete_Status":0,"Device_ID":null,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMzMCwiaXNTdHVkZW50IjoxLCJpYXQiOjE3Njg4MTY2ODF9.2UkZI2MLz-D7alES__aoB1wd1KrHyVZFiB7fl-qmZ2I"}
 SUCCESS: Token received.
+1. Registering new student: teststudent_1768990102500@example.com (Phone: 9200522176) ...
+Registration Response: [{"Student_ID":334,"Source":"Student","existingUser":0}]
+
+2. Attempting Login...
+Login Response: {"Student_ID":334,"First_Name":"Test","Last_Name":"Student","Email":"teststudent_1768990102500@example.com","Phone_Number":"9200522176","Password":"$2b$10$0UekjuCoVfEnzrH4aQWPt.Wf6JlZYVP8R1xhKv9shefAtgSSQOGwi","Salt":"$2b$10$0UekjuCoVfEnzrH4aQWPt.","Delete_Status":0,"Device_ID":null,"token":"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjMzNCwiaXNTdHVkZW50IjoxLCJpYXQiOjE3Njg5OTAxMDN9.HQBKNkeqTkL3Nv9hPU3v62WZX4j__0P8J2VLAujyqsU"}
+SUCCESS: Token received.

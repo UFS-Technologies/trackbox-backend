@@ -194,6 +194,22 @@ var student =
         console.log(is_Student, id);
         return getmultipleSP('Get_AppInfo', [is_Student, id]);
     },
+    Save_Exam_Result: async function (examResult) {
+        return executeTransaction('Save_Exam_Result', [
+            examResult.student_id,
+            examResult.course_id,
+            examResult.exam_data_id,
+            examResult.total_mark,
+            examResult.pass_mark,
+            examResult.obtained_mark
+        ]);
+    },
+    Get_Exam_Results_By_Student: async function (student_id, course_id) {
+        return executeTransaction('Get_Exam_Results_By_Student', [
+            student_id,
+            course_id || null
+        ]);
+    },
 };
 module.exports = student;
 
