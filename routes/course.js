@@ -447,6 +447,15 @@ router.get('/Student_GetQuestions/:course_exam_id', async (req, res) => {
         res.status(500).json({ success: false, message: 'Failed to get questions', error: e.message });
     }
 });
+router.post('/Upload_Questions_Excel', async (req, res) => {
+    try {
+        const rows = await course.Bulk_Insert_Questions(req.body);
+        res.json(rows);
+    } catch (e) {
+        console.error('Excel upload error:', e);
+        res.status(500).json({ success: false, message: 'Failed to upload questions', error: e.message });
+    }
+});
 async function sendNotificationsToMultipleDevices(studentsList, title, body, data) {
     const results = {
         successful: [],

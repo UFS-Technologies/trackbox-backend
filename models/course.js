@@ -153,6 +153,11 @@ var course = {
     Student_GetQuestions: async function (course_exam_id) {
         return getmultipleSP('SP_Student_GetQuestions', [course_exam_id]);
     },
+    Bulk_Insert_Questions: async function (body) {
+        const { exam_data_id, course_exam_id, data } = body;
+        const json_data = JSON.stringify(data);
+        return executeTransaction('SP_Bulk_Insert_Questions', [exam_data_id, course_exam_id, json_data]);
+    },
 
 };
 module.exports = course;
