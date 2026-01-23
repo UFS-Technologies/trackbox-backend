@@ -3145,15 +3145,14 @@ BEGIN
             ELSE TIME_FORMAT(tts.end_time, '%h:%i %p') 
         END AS end_time,
 
-        -- Get teacher name for one-on-one sessions matching Course_ID
+        -- Get teacher name for one-on-one sessions matching Slot_Id
         (SELECT CONCAT(u.First_Name, ' ', u.Last_Name)
-        FROM teacher_time_slot tts 
-        JOIN course_teacher ct ON tts.CourseTeacher_ID = ct.CourseTeacher_ID
-        JOIN users u ON ct.Teacher_ID = u.User_ID 
-        WHERE tts.Slot_Id = sc.Slot_Id  
-        AND ct.Course_ID = sc.Course_ID 
-        AND ct.Delete_Status = false 
-        AND tts.Delete_Status = false 
+        FROM teacher_time_slot tts_sub
+        JOIN course_teacher ct_sub ON tts_sub.CourseTeacher_ID = ct_sub.CourseTeacher_ID
+        JOIN users u ON ct_sub.Teacher_ID = u.User_ID 
+        WHERE tts_sub.Slot_Id = sc.Slot_Id  
+        AND ct_sub.Delete_Status = false 
+        AND tts_sub.Delete_Status = false 
         AND u.Delete_Status = false
         LIMIT 1) AS Teacher_Name_One_On_One,
 
