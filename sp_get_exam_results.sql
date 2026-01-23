@@ -21,7 +21,6 @@ BEGIN
             s.Last_Name,
             c.Course_Name,
             ed.exam_name,
-            ed.exam_type,
             CASE 
                 WHEN erm.obtained_mark >= erm.pass_mark THEN 'Pass'
                 ELSE 'Fail'
@@ -48,7 +47,6 @@ BEGIN
             s.Last_Name,
             c.Course_Name,
             ed.exam_name,
-            ed.exam_type,
             CASE 
                 WHEN erm.obtained_mark >= erm.pass_mark THEN 'Pass'
                 ELSE 'Fail'
