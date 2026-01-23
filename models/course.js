@@ -140,8 +140,8 @@ var course = {
         return executeTransaction('SP_ExamData_Manage', [action, exam_data_id, exam_name]);
     },
     Manage_CourseExam: async function (body) {
-        const { action, course_exam_id, exam_data_id, Course_ID, duration, questions, passcount } = body;
-        return executeTransaction('SP_CourseExam_Manage', [action, course_exam_id, exam_data_id, Course_ID, duration, questions, passcount]);
+        const { action, course_exam_id, exam_data_id, Course_ID, duration, questions, passcount, Day } = body;
+        return executeTransaction('SP_CourseExam_Manage', [action, course_exam_id, exam_data_id, Course_ID, duration, questions, passcount, Day]);
     },
     Student_GetExams: async function (Course_ID) {
         return getmultipleSP('SP_Student_GetExams', [Course_ID]);
