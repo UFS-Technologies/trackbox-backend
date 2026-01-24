@@ -4,9 +4,19 @@ const { getmultipleSP, executeTransaction } = require('../sp-caller');
 
 const OpenAI = require('openai');
 const fuzzball = require('fuzzball');
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_ACCESS_TOKEN
-});
+let openai = null;
+if (process.env.OPENAI_API_KEY) {
+    try {
+        openai = new OpenAI({
+            apiKey: process.env.OPENAI_API_KEY,
+        });
+        console.log("✅ OpenAI client initialized for chatbot.");
+    } catch (error) {
+        console.error("❌ Error initializing OpenAI client:", error.message);
+    }
+} else {
+    console.warn("⚠️ OpenAI: OPENAI_API_KEY not found. Chatbot features will be limited.");
+}
 const { NlpManager } = require('node-nlp');
 
 const jwt = require('jsonwebtoken');

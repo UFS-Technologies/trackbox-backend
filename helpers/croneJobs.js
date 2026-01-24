@@ -6,15 +6,24 @@ var teacher = require('../models/teacher');
 const axios = require('axios');
 const moment = require('moment-timezone');
 
-AWS.config.update({
-    endpoint: new AWS.Endpoint(process.env.CLOUDFLARE_R2_ENDPOINT),
-    accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
-    secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
-    signatureVersion: 'v4',
-    region: 'auto'
-});
-
-const s3 = new AWS.S3();
+let s3 = null;
+if (process.env.CLOUDFLARE_R2_ENDPOINT) {
+    try {
+        AWS.config.update({
+            endpoint: new AWS.Endpoint(process.env.CLOUDFLARE_R2_ENDPOINT),
+            accessKeyId: process.env.CLOUDFLARE_R2_ACCESS_KEY_ID,
+            secretAccessKey: process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY,
+            signatureVersion: 'v4',
+            region: 'auto'
+        });
+        s3 = new AWS.S3();
+        console.log("✅ Cloudflare R2 client initialized for cron jobs.");
+    } catch (error) {
+        console.error("❌ Error initializing Cloudflare R2 client for cron jobs:", error.message);
+    }
+} else {
+    console.warn("⚠️ Cloudflare R2: CLOUDFLARE_R2_ENDPOINT not found. R2 cleanup features will be disabled.");
+}
 
 // Logging function
 function log(level, message, error = null) {
@@ -146,6 +155,10 @@ async function checkAndNotifyExpiringCourses() {
 }
 
 async function deleteR2Object(key) {
+    if (!s3) {
+        log('warn', `Cloudflare R2 client not initialized. Skipping deletion of: ${key}`);
+        return;
+    }
     const params = {
         Bucket: process.env.CLOUDFLARE_R2_BUCKET_NAME || 'trackbox',
         Key: key
