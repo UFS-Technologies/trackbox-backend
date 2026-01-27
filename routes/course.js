@@ -185,6 +185,26 @@ router.post('/Update_LastAccessed_Content', async (req, res) => {
         res.status(500).json({ error: 'An error occurred while updating last accessed content' });
     }
 });
+router.post('/Save_VideoAttendance', async (req, res) => {
+    try {
+        const { Student_ID, Course_ID, Content_ID } = req.body;
+        const rows = await course.Save_VideoAttendance(Student_ID, Course_ID, Content_ID);
+        res.status(200).json({ success: true, rows });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, error: 'An error occurred while saving video attendance' });
+    }
+});
+router.get('/Get_VideoAttendance', async (req, res) => {
+    try {
+        const { Student_ID, Course_ID, Content_ID } = req.query;
+        const rows = await course.Get_VideoAttendance(Student_ID, Course_ID, Content_ID);
+        res.status(200).json({ success: true, rows: rows[0] });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, error: 'An error occurred while fetching video attendance' });
+    }
+});
 router.post('/Unlock_Exam', async (req, res) => {
     try {
         const { contentId, examID, Is_Question_Unlocked, Is_Question_Media_Unlocked, Is_Answer_Unlocked } = req.body;

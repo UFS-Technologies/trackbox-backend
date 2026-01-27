@@ -93,6 +93,12 @@ var course = {
     Update_Time_Slot: async function (studentId, courseId, Slot_Id) {
         return executeTransaction('Update_Time_Slot', [studentId, courseId, Slot_Id]);
     },
+    Save_VideoAttendance: async function (studentId, courseId, contentId) {
+        return executeTransaction('Save_VideoAttendance', [studentId, courseId, contentId]);
+    },
+    Get_VideoAttendance: async function (studentId, courseId, contentId) {
+        return executeTransaction('Get_VideoAttendance', [studentId || 0, courseId || 0, contentId || 0]);
+    },
     Get_course_content_By_Module: async function (course_Id_, Module_ID_) {
         return getmultipleSP('Get_course_content_By_Module', [course_Id_, Module_ID_]);
     },
