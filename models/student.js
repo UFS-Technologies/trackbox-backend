@@ -198,7 +198,7 @@ var student =
         return executeTransaction('Save_Exam_Result', [
             examResult.student_id,
             examResult.course_id,
-            examResult.exam_data_id,
+            examResult.course_exam_id,
             examResult.total_mark,
             examResult.pass_mark,
             examResult.obtained_mark

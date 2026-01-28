@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS exam_result_master (
     exam_result_master_id INT PRIMARY KEY AUTO_INCREMENT,
     student_id INT NOT NULL,
     course_id INT NOT NULL,
+    course_exam_id INT NOT NULL,
     exam_data_id INT NOT NULL,
     total_mark DECIMAL(10,2) NOT NULL,
     pass_mark DECIMAL(10,2) NOT NULL,
@@ -14,9 +15,11 @@ CREATE TABLE IF NOT EXISTS exam_result_master (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT fk_exam_result_student FOREIGN KEY (student_id) REFERENCES student(Student_ID),
     CONSTRAINT fk_exam_result_course FOREIGN KEY (course_id) REFERENCES course(Course_ID),
+    CONSTRAINT fk_exam_result_course_exam FOREIGN KEY (course_exam_id) REFERENCES course_exam(course_exam_id),
     CONSTRAINT fk_exam_result_exam_data FOREIGN KEY (exam_data_id) REFERENCES exam_data(exam_data_id),
     INDEX idx_student_id (student_id),
     INDEX idx_course_id (course_id),
+    INDEX idx_course_exam_id (course_exam_id),
     INDEX idx_exam_data_id (exam_data_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -28,18 +31,25 @@ DROP PROCEDURE IF EXISTS Save_Exam_Result$$
 CREATE PROCEDURE Save_Exam_Result(
     IN p_student_id INT,
     IN p_course_id INT,
-    IN p_exam_data_id INT,
+    IN p_course_exam_id INT,
     IN p_total_mark DECIMAL(10,2),
     IN p_pass_mark DECIMAL(10,2),
     IN p_obtained_mark DECIMAL(10,2)
 )
 BEGIN
     DECLARE v_exam_result_master_id INT;
+    DECLARE v_exam_data_id INT;
     
+    -- Lookup exam_data_id from course_exam
+    SELECT exam_data_id INTO v_exam_data_id 
+    FROM course_exam 
+    WHERE course_exam_id = p_course_exam_id;
+
     -- Insert the exam result
     INSERT INTO exam_result_master (
         student_id,
         course_id,
+        course_exam_id,
         exam_data_id,
         total_mark,
         pass_mark,
@@ -47,7 +57,8 @@ BEGIN
     ) VALUES (
         p_student_id,
         p_course_id,
-        p_exam_data_id,
+        p_course_exam_id,
+        v_exam_data_id,
         p_total_mark,
         p_pass_mark,
         p_obtained_mark
@@ -61,7 +72,8 @@ BEGIN
         v_exam_result_master_id AS exam_result_master_id,
         p_student_id AS student_id,
         p_course_id AS course_id,
-        p_exam_data_id AS exam_data_id,
+        p_course_exam_id AS course_exam_id,
+        v_exam_data_id AS exam_data_id,
         p_total_mark AS total_mark,
         p_pass_mark AS pass_mark,
         p_obtained_mark AS obtained_mark,
@@ -86,6 +98,7 @@ BEGIN
             erm.exam_result_master_id,
             erm.student_id,
             erm.course_id,
+            erm.course_exam_id,
             erm.exam_data_id,
             erm.total_mark,
             erm.pass_mark,
@@ -113,6 +126,7 @@ BEGIN
             erm.exam_result_master_id,
             erm.student_id,
             erm.course_id,
+            erm.course_exam_id,
             erm.exam_data_id,
             erm.total_mark,
             erm.pass_mark,

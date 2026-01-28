@@ -616,7 +616,7 @@ router.post('/Save_Exam_Result/', async (req, res, next) => {
         const examResult = {
             student_id: req.body.student_id,
             course_id: req.body.course_id,
-            exam_data_id: req.body.exam_data_id,
+            course_exam_id: req.body.course_exam_id,
             total_mark: req.body.total_mark,
             pass_mark: req.body.pass_mark,
             obtained_mark: req.body.obtained_mark

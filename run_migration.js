@@ -22,6 +22,7 @@ async function runMigration() {
         // Step 1: Create table
         console.log('Step 1: Creating exam_result_master table...');
         const createTableSQL = fs.readFileSync(path.join(__dirname, 'create_table.sql'), 'utf8');
+        await connection.query('DROP TABLE IF EXISTS exam_result_master');
         await connection.query(createTableSQL);
         console.log('✅ Table created successfully\n');
 

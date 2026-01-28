@@ -28,7 +28,7 @@ var connection = mysql.createPool({
     waitForConnections: true,
     connectionLimit: 50,
     queueLimit: 0,
-    connectTimeout: 30000, 
+    connectTimeout: 30000,
     multipleStatements: true,
 });
 
