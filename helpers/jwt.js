@@ -41,7 +41,9 @@ function jwtMiddleware() {
                 '/teacher/Delete_Teacher_Qualification',
                 '/teacher/Delete_Teacher_Experience',
                 '/teacher/Edit_Teacher_Qualification',
-                '/teacher/Edit_Teacher_Experience'
+                '/teacher/Edit_Teacher_Experience',
+                '/user/Save_user',
+                '/user/Get_user'
             ];
 
             const lowerPath = path.toLowerCase().replace(/\/$/, ""); // Normalize: lowercase and remove trailing slash
