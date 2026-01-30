@@ -89,6 +89,16 @@ app.use((req, res, next) => {
     req.url = '/Login/Student_Login_Check';
   }
 
+  // Handle missing /course prefix for video attendance
+  if (req.url.toLowerCase().startsWith('/get_videoattendance')) {
+    console.log('Video Attendance GET detected, normalizing...');
+    req.url = '/course' + req.url;
+  }
+  if (req.url.toLowerCase().startsWith('/save_videoattendance')) {
+    console.log('Video Attendance POST detected, normalizing...');
+    req.url = '/course' + req.url;
+  }
+
   if (originalUrl !== req.url) {
     console.log(`URL Normalized: ${originalUrl} -> ${req.url}`);
   }

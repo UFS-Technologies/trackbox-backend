@@ -1,7 +1,19 @@
--- Migration for Get_VideoAttendance SP
-DROP PROCEDURE IF EXISTS `Get_VideoAttendance`;
+const mysql = require('mysql2/promise');
 
-CREATE PROCEDURE `Get_VideoAttendance`(
+async function applySP() {
+    const connection = await mysql.createConnection({
+        host: "DESKTOP-IK6ME8M",
+        user: "root",
+        password: "root",
+        database: "breffini-live",
+        port: 3306,
+        multipleStatements: true
+    });
+
+    const spSql = `
+DROP PROCEDURE IF EXISTS \`Get_VideoAttendance\`;
+
+CREATE PROCEDURE \`Get_VideoAttendance\`(
     IN p_Student_ID INT,
     IN p_Course_ID INT,
     IN p_Content_ID INT,
@@ -16,7 +28,7 @@ BEGIN
         va.Watched_Date,
         va.Update_Time,
         c.Course_Name,
-        cc.Content_Name as Content_Name -- Corrected from Description
+        cc.Content_Name as Content_Name
     FROM video_attendance va
     JOIN course c ON va.Course_ID = c.Course_ID
     JOIN course_content cc ON va.Content_ID = cc.Content_ID
@@ -27,3 +39,16 @@ BEGIN
       AND va.Delete_Status = 0
     ORDER BY va.Update_Time DESC;
 END;
+`;
+
+    try {
+        await connection.query(spSql);
+        console.log('Successfully updated Get_VideoAttendance SP');
+    } catch (e) {
+        console.error('Failed to update SP:', e.message);
+    } finally {
+        await connection.end();
+    }
+}
+
+applySP();

@@ -1,5 +1,5 @@
 const axios = require('axios');
-const baseURL = 'http://127.0.0.1:3520';
+const baseURL = 'http://127.0.0.1:3515';
 
 const fs = require('fs');
 function log(msg) {
@@ -11,7 +11,7 @@ async function test() {
     const email = `teststudent_${Date.now()}@example.com`;
     const phone = `9${Math.floor(Math.random() * 899999999) + 100000000}`; // Random 10-digit number starting with 9
     const password = 'TestPassword123!';
-    
+
     log(`1. Registering new student: ${email} (Phone: ${phone}) ...`);
     try {
         const regRes = await axios.post(`${baseURL}/student/Save_student`, {

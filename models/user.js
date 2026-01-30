@@ -1,7 +1,7 @@
 var fs = require('fs');
 const { executeTransaction, getmultipleSP } = require('../helpers/sp-caller');
 var user = {
-    Save_user: async function(user) {
+    Save_user: async function (user) {
         return executeTransaction('Save_User', [
             user.User_ID,
             user.First_Name,
@@ -18,15 +18,15 @@ var user = {
             user.Profile_Photo_Path,
             JSON.stringify(user.Course_ID),
             user.Hod,
-            JSON.stringify(user.teacherCourses),        
-       
+            JSON.stringify(user.teacherCourses),
+            user.Registered_Date
         ]);
     },
-    
-    Save_StudentLiveClass: async function(student) {
+
+    Save_StudentLiveClass: async function (student) {
         return executeTransaction('Save_StudentLiveClass', [student.StudentLiveClass_ID, student.Student_ID, student.LiveClass_ID, student.Start_Time, student.End_Time, student.Attendance_Duration]);
     },
-    Update_Call_Status: async function(callId, type, status, user_Id=0, isStudent=0) {
+    Update_Call_Status: async function (callId, type, status, user_Id = 0, isStudent = 0) {
         try {
             const result = await executeTransaction('Update_Call_Status', [callId, type, status, user_Id, isStudent]);
             return result;
@@ -35,24 +35,24 @@ var user = {
             throw new Error('Error updating call status');
         }
     },
-    
-    Save_Call_History: async function(call) {
-        return executeTransaction('Save_Call_History', [call.id, call.teacher_id, call.student_id, call.call_start, call.call_end, call.call_duration, call.call_type, call.Is_Student_Called, call.Live_Link,call.is_call_rejected  ]);
+
+    Save_Call_History: async function (call) {
+        return executeTransaction('Save_Call_History', [call.id, call.teacher_id, call.student_id, call.call_start, call.call_end, call.call_duration, call.call_type, call.Is_Student_Called, call.Live_Link, call.is_call_rejected]);
     },
-    Delete_user: async function(user_Id_) {
+    Delete_user: async function (user_Id_) {
         return executeTransaction('Delete_User', [user_Id_]);
     },
-    Get_user: async function(user_Id_) {
+    Get_user: async function (user_Id_) {
         return executeTransaction('Get_user', [user_Id_]);
     },
-    Search_user: async function(params) {
-        const { 
+    Search_user: async function (params) {
+        const {
             user_Name,
             slot_wise,
             batch_wise,
             course_id,
             hod_only
-        } = params; 
+        } = params;
 
         // Handle undefined search term
         const searchTerm = user_Name === undefined || user_Name === 'undefined' ? '' : user_Name;
@@ -66,39 +66,39 @@ var user = {
             hod_only
         ]);
     },
-    Get_Dashboard: async function() {
+    Get_Dashboard: async function () {
 
         return getmultipleSP('Get_Dashboard', []);
     },
-    Get_courses: async function(student_Id_) {
+    Get_courses: async function (student_Id_) {
         return executeTransaction('GetCoursesByUserId', [student_Id_]);
     },
-    Get_Calls_And_Chats_List: async function(type, sender, teacherId, studentId) {
+    Get_Calls_And_Chats_List: async function (type, sender, teacherId, studentId) {
         return executeTransaction('Get_Calls_And_Chats_List', [type, sender, teacherId, studentId]);
     },
-    Logout_User: async function(userId, isStudent) {
+    Logout_User: async function (userId, isStudent) {
         return executeTransaction('Logout_User', [userId, isStudent]);
     },
-    get_call_history: async function(studentId, teacherId) {
+    get_call_history: async function (studentId, teacherId) {
         console.log('studentId:s ', studentId);
         console.log('teacherId: ', teacherId);
         return executeTransaction('get_call_history', [studentId, teacherId]);
     },
-    Get_Ongoing_Calls: async function(userId, isStudent) {
+    Get_Ongoing_Calls: async function (userId, isStudent) {
         console.log('isStudent: ', isStudent);
         console.log('userId: ', userId);
- 
+
         return executeTransaction('Get_Ongoing_Calls', [userId, isStudent]);
     },
-    Get_Completed_Live_Class: async function(userId) {
+    Get_Completed_Live_Class: async function (userId) {
         console.log('userId: ', userId);
         return executeTransaction('Get_Completed_liveClass', [userId]);
     },
-    Get_Report_StudentLiveClasses_By_BatchAndStudent: async function(
-        studentId, 
-        Batch_ID, 
-        Course_ID, 
-        Start_Date, 
+    Get_Report_StudentLiveClasses_By_BatchAndStudent: async function (
+        studentId,
+        Batch_ID,
+        Course_ID,
+        Start_Date,
         End_Date,
         page,
         pageSize
@@ -110,22 +110,22 @@ var user = {
         End_Date = End_Date || '';
         page = page || 1;
         pageSize = pageSize || 25;
-    
+
         return getmultipleSP('Get_Report_StudentLiveClasses_By_BatchAndStudent', [
-            studentId, 
-            Batch_ID, 
-            Course_ID, 
-            Start_Date, 
+            studentId,
+            Batch_ID,
+            Course_ID,
+            Start_Date,
             End_Date,
             page,
             pageSize
         ]);
     },
-    Get_Report_TeacherLiveClasses_By_BatchAndTeacher: async function(
-        Teacher_ID, 
-        Batch_ID, 
-        Course_ID, 
-        Start_Date, 
+    Get_Report_TeacherLiveClasses_By_BatchAndTeacher: async function (
+        Teacher_ID,
+        Batch_ID,
+        Course_ID,
+        Start_Date,
         End_Date,
         page,
         pageSize
@@ -137,28 +137,28 @@ var user = {
         End_Date = End_Date || '';
         page = page || 1;
         pageSize = pageSize || 25;
-    
+
         return getmultipleSP('Get_Report_TeacherLiveClasses_By_BatchAndTeacher', [
-            Teacher_ID, 
-            Batch_ID, 
-            Course_ID, 
-            Start_Date, 
+            Teacher_ID,
+            Batch_ID,
+            Course_ID,
+            Start_Date,
             End_Date,
             page,
             pageSize
         ]);
     },
-    
-    Get_Hod_Course: async function(userId) {
+
+    Get_Hod_Course: async function (userId) {
 
         return executeTransaction('Get_Hod_Course', [userId]);
     },
-    Get_Report_LiveClasses_By_BatchAndTeacher: async function(Teacher_ID, Batch_ID, Course_ID, Start_Date, End_Date) {
+    Get_Report_LiveClasses_By_BatchAndTeacher: async function (Teacher_ID, Batch_ID, Course_ID, Start_Date, End_Date) {
         if (!End_Date) {
 
             console.log('End_Date: ', End_Date);
             console.log('Start_Date: ', Start_Date);
-        }!Teacher_ID ? Teacher_ID = 0 : Teacher_ID;
+        } !Teacher_ID ? Teacher_ID = 0 : Teacher_ID;
         !Batch_ID ? Batch_ID = 0 : Batch_ID;
         !Course_ID ? Course_ID = 0 : Course_ID;
         !Start_Date ? Start_Date = '' : Start_Date;
@@ -167,39 +167,39 @@ var user = {
 
         return executeTransaction('Get_Report_LiveClasses_By_BatchAndTeacher', [Teacher_ID, Batch_ID, Course_ID, Start_Date, End_Date]);
     },
-    Get_User_Email_Number: async function(user_Id) {
+    Get_User_Email_Number: async function (user_Id) {
         return executeTransaction('Get_User_Email_Number', [
             user_Id
         ]);
 
     },
-    Check_Call_Availability: async function(user_Id, is_Student) {
+    Check_Call_Availability: async function (user_Id, is_Student) {
         return executeTransaction('Check_Call_Availability', [
             user_Id, is_Student
         ]);
 
     },
 
-    update_user_status: async function(user_Id, status) {
+    update_user_status: async function (user_Id, status) {
         status = status == 'true' ? 1 : 0
         return executeTransaction('update_user_status', [
             user_Id, status
         ]);
 
     },
-    Search_User_Invoice: async function(user_Id) {
+    Search_User_Invoice: async function (user_Id) {
         return executeTransaction('Search_User_Invoice', [
             user_Id
         ]);
 
     },
-    Delete_Invoice: async function(Invoice_Id) {
+    Delete_Invoice: async function (Invoice_Id) {
         return executeTransaction('Delete_Invoice', [
             Invoice_Id
         ]);
 
     },
-    Save_User_Invoice: async function(data) {
+    Save_User_Invoice: async function (data) {
         return executeTransaction('Save_User_Invoice', [
             data.Invoice_Id,
             data.invoice_date,
@@ -214,7 +214,7 @@ var user = {
             data.Course_Id
         ]);
     },
-    get_onetoone_Recordings: async function(studentId) {
+    get_onetoone_Recordings: async function (studentId) {
         return executeTransaction('Get_OneToOne_Recordings', [studentId]);
     },
     Report_User: async function (reportData) {
@@ -244,7 +244,7 @@ var user = {
     Check_User_Blocked_Status: async function (blocker_id, blocked_user_id) {
         return executeTransaction('Check_User_Blocked_Status', [
             blocker_id,
-           blocked_user_id
+            blocked_user_id
         ]);
     }
     // get_chat_call_history: async function (student_Id_,teacher_Id_) {
