@@ -242,6 +242,7 @@ router.get('/Get_user/:user_Id_?', async (req, res, next)=>
 try 
 {
     const rows = await user.Get_user(req.params.user_Id_);
+    console.log('Get_user API response:', JSON.stringify(rows));
     res.json([rows]);
 }
 catch (e) 
