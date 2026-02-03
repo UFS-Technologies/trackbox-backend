@@ -3867,7 +3867,7 @@ BEGIN
     LIMIT 
         5;
 
-    -- Second query
+    -- Second query (Existing)
   SELECT Month, Student_Count FROM (
         SELECT 
             DATE_FORMAT(Enrollment_Date, '%M') AS Month,
@@ -3883,6 +3883,108 @@ BEGIN
     ) AS sub
     ORDER BY 
         STR_TO_DATE(Month, '%M');
+
+    -- Third query: Course Wise Monthly Enrollment (Existing, but used for line chart)
+    SELECT 
+        c.Course_Name,
+        DATE_FORMAT(sc.Enrollment_Date, '%M') AS Month,
+        COUNT(sc.StudentCourse_ID) AS Student_Count
+    FROM 
+        student_course sc
+    JOIN 
+        course c ON sc.Course_ID = c.Course_ID
+    WHERE 
+        sc.Delete_Status = 0 AND 
+        c.Delete_Status = 0 AND 
+        YEAR(sc.Enrollment_Date) = YEAR(CURDATE())
+    GROUP BY 
+        c.Course_Name, DATE_FORMAT(sc.Enrollment_Date, '%M')
+    ORDER BY 
+        STR_TO_DATE(Month, '%M');
+
+    -- Fourth query: Student Status Distribution (For Pie Chart)
+    SELECT 
+        CASE WHEN Delete_Status = 0 THEN 'Active' ELSE 'Inactive' END AS Status,
+        COUNT(*) AS Count
+    FROM 
+        student
+    GROUP BY 
+        Delete_Status;
+
+    -- Fifth query: Top Performing Students (Based on Exam Results)
+    SELECT 
+        s.First_Name,
+        s.Last_Name,
+        AVG(obtained_mark) AS Avg_Mark
+    FROM 
+        exam_result_master erm
+    JOIN 
+        student s ON erm.student_id = s.Student_ID
+    GROUP BY 
+        s.Student_ID, s.First_Name, s.Last_Name
+    ORDER BY 
+        Avg_Mark DESC
+    LIMIT 10;
+
+    -- Sixth query: Summary Metrics
+    SELECT 
+        -- 1. Active Students (Last 7 Days)
+        (SELECT COUNT(*) 
+         FROM student 
+         WHERE Delete_Status = 0 
+           AND (Last_Online IS NOT NULL AND Last_Online != '')
+           AND STR_TO_DATE(Last_Online, '%Y-%m-%d %H:%i:%s') >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        ) AS Active_Students_7Days,
+
+        -- 2. New Registrations Today
+        (SELECT COUNT(*) 
+         FROM student_course 
+         WHERE Delete_Status = 0 
+           AND DATE(Enrollment_Date) = CURDATE()
+        ) AS New_Registrations_Today,
+
+        -- 3. New Registrations Last 7 Days
+        (SELECT COUNT(*) 
+         FROM student_course 
+         WHERE Delete_Status = 0 
+           AND Enrollment_Date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        ) AS New_Registrations_7Days,
+
+        -- 4. Course Completion Rate (Average)
+        (SELECT IFNULL(AVG(completion), 0)
+         FROM (
+             SELECT 
+                 (COUNT(DISTINCT va.Content_ID) / total_c.total) * 100 as completion
+             FROM student_course sc
+             JOIN (
+                 SELECT Course_Id, COUNT(*) as total 
+                 FROM course_content 
+                 WHERE Delete_Status = 0 
+                 GROUP BY Course_Id
+             ) total_c ON sc.Course_ID = CAST(total_c.Course_Id AS UNSIGNED)
+             LEFT JOIN video_attendance va ON sc.Student_ID = va.Student_ID AND sc.Course_ID = va.Course_ID
+             WHERE sc.Delete_Status = 0
+             GROUP BY sc.Student_ID, sc.Course_ID
+         ) AS completions
+        ) AS Global_Completion_Rate,
+
+        -- 5. Batch Attendance Rate (Today)
+        (SELECT IFNULL(AVG(batch_attendance_rate), 0)
+         FROM (
+            SELECT 
+                IF(COUNT(DISTINCT sc.Student_ID) > 0, 
+                   (COUNT(DISTINCT va.Student_ID) / COUNT(DISTINCT sc.Student_ID)) * 100, 
+                   0) as batch_attendance_rate
+            FROM course_batch b
+            LEFT JOIN student_course sc ON b.Batch_ID = sc.Batch_ID AND sc.Delete_Status = 0
+            LEFT JOIN video_attendance va ON sc.Student_ID = va.Student_ID 
+                 AND DATE(va.Watched_Date) = CURDATE() 
+                 AND va.Delete_Status = 0
+            WHERE b.Delete_Status = 0
+            GROUP BY b.Batch_ID
+            HAVING COUNT(DISTINCT sc.Student_ID) > 0
+         ) AS batch_rates
+        ) AS Global_Attendance_Rate;
 
 END ;;
 DELIMITER ;
