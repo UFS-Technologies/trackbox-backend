@@ -246,6 +246,9 @@ var user = {
             blocker_id,
             blocked_user_id
         ]);
+    },
+    Get_Dashboard_Metric_Details: async function (type) {
+        return executeTransaction('Get_Dashboard_Metric_Details', [type]);
     }
     // get_chat_call_history: async function (student_Id_,teacher_Id_) {
     //     return executeTransaction('get_chat_call_history', [student_Id_,teacher_Id_]);

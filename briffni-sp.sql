@@ -3988,6 +3988,81 @@ BEGIN
 
 END ;;
 DELIMITER ;
+
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_0900_ai_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`root`@`%` PROCEDURE `Get_Dashboard_Metric_Details`(IN p_type VARCHAR(50))
+BEGIN
+    IF p_type = 'active_students' THEN
+        -- Active Students (Last 7 Days)
+        SELECT 
+            s.Student_ID, s.First_Name, s.Last_Name, s.Email, s.Phone_Number as PhoneNumber, s.Last_Online
+        FROM student s
+        WHERE s.Delete_Status = 0 
+          AND (s.Last_Online IS NOT NULL AND s.Last_Online != '')
+          AND STR_TO_DATE(s.Last_Online, '%Y-%m-%d %H:%i:%s') >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+        ORDER BY s.Last_Online DESC;
+
+    ELSEIF p_type = 'new_registrations' THEN
+        -- New Registrations (Last 7 Days)
+        SELECT 
+            sc.Student_ID, s.First_Name, s.Last_Name, c.Course_Name, sc.Enrollment_Date
+        FROM student_course sc
+        JOIN student s ON sc.Student_ID = s.Student_ID
+        JOIN course c ON sc.Course_ID = c.Course_ID
+        WHERE sc.Delete_Status = 0 
+          AND sc.Enrollment_Date >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+        ORDER BY sc.Enrollment_Date DESC;
+
+    ELSEIF p_type = 'course_completion' THEN
+        -- Course Completion Rate (Per Student)
+        SELECT 
+            s.Student_ID, s.First_Name, s.Last_Name, c.Course_Name,
+            ROUND((COUNT(DISTINCT va.Content_ID) / total_c.total) * 100, 1) as Completion_Percentage
+        FROM student_course sc
+        JOIN student s ON sc.Student_ID = s.Student_ID
+        JOIN course c ON sc.Course_ID = c.Course_ID
+        JOIN (
+            SELECT Course_Id, COUNT(*) as total 
+            FROM course_content 
+            WHERE Delete_Status = 0 
+            GROUP BY Course_Id
+        ) total_c ON sc.Course_ID = CAST(total_c.Course_Id AS UNSIGNED)
+        LEFT JOIN video_attendance va ON sc.Student_ID = va.Student_ID AND sc.Course_ID = va.Course_ID
+        WHERE sc.Delete_Status = 0
+        GROUP BY s.Student_ID, s.First_Name, s.Last_Name, c.Course_Name, total_c.total
+        ORDER BY Completion_Percentage DESC;
+
+    ELSEIF p_type = 'batch_attendance' THEN
+        -- Batch Attendance Rate (Today)
+        SELECT 
+            b.Batch_Name,
+            COUNT(DISTINCT sc.Student_ID) as Total_Students,
+            COUNT(DISTINCT va.Student_ID) as Present_Students,
+            ROUND((COUNT(DISTINCT va.Student_ID) / COUNT(DISTINCT sc.Student_ID)) * 100, 1) as Attendance_Rate
+        FROM course_batch b
+        LEFT JOIN student_course sc ON b.Batch_ID = sc.Batch_ID AND sc.Delete_Status = 0
+        LEFT JOIN video_attendance va ON sc.Student_ID = va.Student_ID 
+             AND DATE(va.Watched_Date) = CURDATE() 
+             AND va.Delete_Status = 0
+        WHERE b.Delete_Status = 0
+        GROUP BY b.Batch_ID, b.Batch_Name
+        HAVING Total_Students > 0
+        ORDER BY Attendance_Rate DESC;
+    END IF;
+END ;;
+DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
