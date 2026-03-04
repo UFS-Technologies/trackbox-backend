@@ -1,3 +1,5 @@
+
+
 -- MySQL dump 10.13  Distrib 8.0.41, for Linux (x86_64)
 --
 -- Host: localhost    Database: Breffni
@@ -1058,15 +1060,15 @@ CREATE DEFINER=`root`@`%` PROCEDURE `enroleCourse`(
     IN StudentCourse_ID_ int
 )
 BEGIN
-     DECLARE course_validity INT;
+    DECLARE course_validity INT;
     DECLARE course_expiry_date DATE;
     DECLARE existing_Course_ID INT;
     DECLARE course_Name_ VARCHAR(100);
     DECLARE student_Name_ VARCHAR(100);
-    DECLARE slot_conflict INT;
     DECLARE course_conflict INT;
+
     -- Fetch course details
-    SELECT Validity, Course_Name,Price INTO course_validity, course_Name_,Price_ FROM course WHERE Course_ID = Course_ID_;
+    SELECT Validity, Course_Name, Price INTO course_validity, course_Name_, Price_ FROM course WHERE Course_ID = Course_ID_;
     SELECT First_Name INTO student_Name_ FROM student WHERE Student_ID = Student_ID_;
 
     -- Check if the course is valid
@@ -1074,67 +1076,50 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid Course_ID';
     END IF;
 
+    -- Calculate Expiry Date
+    SET course_expiry_date = NULL;
+    IF Batch_Id_ IS NOT NULL AND Batch_Id_ > 0 THEN
+        SELECT End_Date INTO course_expiry_date
+        FROM course_batch
+        WHERE Batch_ID = Batch_Id_;
+    END IF;
+
+    IF course_expiry_date IS NULL THEN
+        SET course_expiry_date = DATE_ADD(Enrollment_Date_, INTERVAL course_validity DAY);
+    END IF;
+
     -- Check if the StudentCourse_ID is provided for update
     IF StudentCourse_ID_ > 0 THEN
-        SELECT Course_ID INTO existing_Course_ID FROM student_course WHERE StudentCourse_ID = StudentCourse_ID_;
-
-		  IF Batch_Id_ IS NULL THEN
-				SET course_expiry_date = DATE_ADD(Enrollment_Date_, INTERVAL course_validity DAY);
-			ELSE
-				-- Fetch End_Date from course_batch table based on Batch_ID
-				SELECT End_Date INTO course_expiry_date
-				FROM course_batch
-				WHERE Batch_ID = Batch_Id_;
-			END IF;
-
-            -- If the course is different, update all fields, including expiry
-
-            UPDATE student_course
-            SET 
-                Course_ID = Course_ID_,
-                Enrollment_Date = Enrollment_Date_,
-                Expiry_Date = course_expiry_date,
-                Price = Price_,
-                Payment_Date = Payment_Date_,
-                Payment_Status = Payment_Status_,
-                LastAccessed_Content_ID = LastAccessed_Content_ID_,
-                Transaction_Id = Transaction_Id_,
-                Delete_Status = Delete_Status_,
-                Payment_Method = Payment_Method_,
-                Slot_Id = Slot_Id_,
-                Requested_Slot_Id = Slot_Id_,
-                Batch_ID = Batch_Id_
-            WHERE 
-                StudentCourse_ID = StudentCourse_ID_;
-      
-
+        UPDATE student_course
+        SET 
+            Course_ID = Course_ID_,
+            Enrollment_Date = Enrollment_Date_,
+            Expiry_Date = course_expiry_date,
+            Price = Price_,
+            Payment_Date = Payment_Date_,
+            Payment_Status = Payment_Status_,
+            LastAccessed_Content_ID = LastAccessed_Content_ID_,
+            Transaction_Id = Transaction_Id_,
+            Delete_Status = Delete_Status_,
+            Payment_Method = Payment_Method_,
+            Slot_Id = Slot_Id_,
+            Requested_Slot_Id = Slot_Id_,
+            Batch_ID = Batch_Id_
+        WHERE 
+            StudentCourse_ID = StudentCourse_ID_;
     ELSE
-    insert into  data_log  values (45682,Batch_Id_);
-		
-     #   SET course_expiry_date = DATE_ADD(Enrollment_Date_, INTERVAL course_validity DAY);
-           IF Batch_Id_ IS NULL THEN
-				SET course_expiry_date = DATE_ADD(Enrollment_Date_, INTERVAL course_validity DAY);
-			ELSE
-				-- Fetch End_Date from course_batch table based on Batch_ID
-				SELECT End_Date INTO course_expiry_date
-				FROM course_batch
-				WHERE Batch_ID = Batch_Id_;
-			END IF;
-
-        -- Check for slot conflicts
-        SELECT COUNT(*) INTO slot_conflict 
-        FROM student_course 
-        WHERE Slot_Id = Slot_Id_ AND Student_ID != Student_ID_ AND Delete_Status = 0 AND Expiry_Date >= CURDATE();
+        -- Insert path
+        INSERT INTO data_log VALUES (45682, Batch_Id_);
 
         -- Check for Course conflicts
         SELECT COUNT(*) INTO course_conflict 
         FROM student_course 
-        WHERE  Course_ID = Course_ID_ and  Student_ID = Student_ID_ AND Delete_Status = 0 AND Expiry_Date >= CURDATE();
-      IF course_conflict > 0 THEN
-			SIGNAL SQLSTATE '45000'
-			SET MESSAGE_TEXT = 'Student is already enrolled in this course'; 
-		ELSE 
-			IF slot_conflict > 0 THEN
+        WHERE Course_ID = Course_ID_ AND Student_ID = Student_ID_ AND Delete_Status = 0 AND Expiry_Date >= CURDATE();
+
+        IF course_conflict > 0 THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Student is already enrolled in this course'; 
+        ELSE 
             INSERT INTO student_course (
                 Student_ID, 
                 Course_ID, 
@@ -1162,46 +1147,13 @@ BEGIN
                 Transaction_Id_, 
                 Delete_Status_, 
                 Payment_Method_,
-                NULL, 
-                Slot_Id_,
-                Batch_Id_
-            );
-        ELSE
-            -- No conflict, insert Slot_Id as provided
-            INSERT INTO student_course (
-                Student_ID, 
-                Course_ID, 
-                Enrollment_Date, 
-                Expiry_Date, 
-                Price, 
-                Payment_Date, 
-                Payment_Status, 
-                LastAccessed_Content_ID, 
-                Transaction_Id, 
-                Delete_Status, 
-                Payment_Method,
-                Slot_Id,
-                Requested_Slot_Id,
-                Batch_ID
-            ) VALUES (
-                Student_ID_, 
-                Course_ID_, 
-                Enrollment_Date_, 
-                course_expiry_date, 
-                Price_, 
-                Payment_Date_, 
-                Payment_Status_, 
-                LastAccessed_Content_ID_, 
-                Transaction_Id_, 
-                Delete_Status_, 
-                Payment_Method_,
-                Slot_Id_,
+                Slot_Id_, 
                 Slot_Id_,
                 Batch_Id_
             );
         END IF;
-			END IF;
-    	END IF; 
+    END IF;
+
     -- Return the details
     SELECT Course_ID_, Student_ID_, course_Name_, student_Name_;
 END ;;
@@ -1235,13 +1187,13 @@ CREATE DEFINER=`root`@`%` PROCEDURE `enroleCourseFromAdmin`(
     IN StudentCourse_ID_ int
 )
 BEGIN
-     DECLARE course_validity INT;
+    DECLARE course_validity INT;
     DECLARE course_expiry_date DATE;
     DECLARE existing_Course_ID INT;
     DECLARE course_Name_ VARCHAR(100);
     DECLARE student_Name_ VARCHAR(100);
-    DECLARE slot_conflict INT;
     DECLARE course_conflict INT;
+
     -- Fetch course details
     SELECT Validity, Course_Name INTO course_validity, course_Name_ FROM course WHERE Course_ID = Course_ID_;
     SELECT First_Name INTO student_Name_ FROM student WHERE Student_ID = Student_ID_;
@@ -1251,67 +1203,50 @@ BEGIN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Invalid Course_ID';
     END IF;
 
+    -- Calculate Expiry Date
+    SET course_expiry_date = NULL;
+    IF Batch_Id_ IS NOT NULL AND Batch_Id_ > 0 THEN
+        SELECT End_Date INTO course_expiry_date
+        FROM course_batch
+        WHERE Batch_ID = Batch_Id_;
+    END IF;
+
+    IF course_expiry_date IS NULL THEN
+        SET course_expiry_date = DATE_ADD(Enrollment_Date_, INTERVAL course_validity DAY);
+    END IF;
+
     -- Check if the StudentCourse_ID is provided for update
     IF StudentCourse_ID_ > 0 THEN
-        SELECT Course_ID INTO existing_Course_ID FROM student_course WHERE StudentCourse_ID = StudentCourse_ID_;
-
-		  IF Batch_Id_ IS NULL THEN
-				SET course_expiry_date = DATE_ADD(Enrollment_Date_, INTERVAL course_validity DAY);
-			ELSE
-				-- Fetch End_Date from course_batch table based on Batch_ID
-				SELECT End_Date INTO course_expiry_date
-				FROM course_batch
-				WHERE Batch_ID = Batch_Id_;
-			END IF;
-
-            -- If the course is different, update all fields, including expiry
-
-            UPDATE student_course
-            SET 
-                Course_ID = Course_ID_,
-                Enrollment_Date = Enrollment_Date_,
-                Expiry_Date = course_expiry_date,
-                Price = Price_,
-                Payment_Date = Payment_Date_,
-                Payment_Status = Payment_Status_,
-                LastAccessed_Content_ID = LastAccessed_Content_ID_,
-                Transaction_Id = Transaction_Id_,
-                Delete_Status = Delete_Status_,
-                Payment_Method =  'ADMIN',
-                Slot_Id = Slot_Id_,
-                Requested_Slot_Id = Slot_Id_,
-                Batch_ID = Batch_Id_
-            WHERE 
-                StudentCourse_ID = StudentCourse_ID_;
-      
-
+        UPDATE student_course
+        SET 
+            Course_ID = Course_ID_,
+            Enrollment_Date = Enrollment_Date_,
+            Expiry_Date = course_expiry_date,
+            Price = Price_,
+            Payment_Date = Payment_Date_,
+            Payment_Status = Payment_Status_,
+            LastAccessed_Content_ID = LastAccessed_Content_ID_,
+            Transaction_Id = Transaction_Id_,
+            Delete_Status = Delete_Status_,
+            Payment_Method = 'ADMIN',
+            Slot_Id = Slot_Id_,
+            Requested_Slot_Id = Slot_Id_,
+            Batch_ID = Batch_Id_
+        WHERE 
+            StudentCourse_ID = StudentCourse_ID_;
     ELSE
-    insert into  data_log  values (45682,Batch_Id_);
-		
-     #   SET course_expiry_date = DATE_ADD(Enrollment_Date_, INTERVAL course_validity DAY);
-           IF Batch_Id_ IS NULL THEN
-				SET course_expiry_date = DATE_ADD(Enrollment_Date_, INTERVAL course_validity DAY);
-			ELSE
-				-- Fetch End_Date from course_batch table based on Batch_ID
-				SELECT End_Date INTO course_expiry_date
-				FROM course_batch
-				WHERE Batch_ID = Batch_Id_;
-			END IF;
-
-        -- Check for slot conflicts
-        SELECT COUNT(*) INTO slot_conflict 
-        FROM student_course 
-        WHERE Slot_Id = Slot_Id_ AND Student_ID != Student_ID_ AND Delete_Status = 0 AND Expiry_Date >= CURDATE();
+        -- Insert path
+        INSERT INTO data_log VALUES (45682, Batch_Id_);
 
         -- Check for Course conflicts
         SELECT COUNT(*) INTO course_conflict 
         FROM student_course 
-        WHERE  Course_ID = Course_ID_ and  Student_ID = Student_ID_ AND Delete_Status = 0 AND Expiry_Date >= CURDATE();
+        WHERE Course_ID = Course_ID_ AND Student_ID = Student_ID_ AND Delete_Status = 0 AND Expiry_Date >= CURDATE();
+
         IF course_conflict > 0 THEN
-			SIGNAL SQLSTATE '45000'
-			SET MESSAGE_TEXT = 'Student is already enrolled in this course'; 
-		ELSE 
-			IF slot_conflict > 0 THEN
+            SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'Student is already enrolled in this course'; 
+        ELSE 
             INSERT INTO student_course (
                 Student_ID, 
                 Course_ID, 
@@ -1339,46 +1274,13 @@ BEGIN
                 Transaction_Id_, 
                 Delete_Status_, 
                 'ADMIN',
-                NULL, 
-                Slot_Id_,
-                Batch_Id_
-            );
-        ELSE
-            -- No conflict, insert Slot_Id as provided
-            INSERT INTO student_course (
-                Student_ID, 
-                Course_ID, 
-                Enrollment_Date, 
-                Expiry_Date, 
-                Price, 
-                Payment_Date, 
-                Payment_Status, 
-                LastAccessed_Content_ID, 
-                Transaction_Id, 
-                Delete_Status, 
-                Payment_Method,
-                Slot_Id,
-                Requested_Slot_Id,
-                Batch_ID
-            ) VALUES (
-                Student_ID_, 
-                Course_ID_, 
-                Enrollment_Date_, 
-                course_expiry_date, 
-                Price_, 
-                Payment_Date_, 
-                Payment_Status_, 
-                LastAccessed_Content_ID_, 
-                Transaction_Id_, 
-                Delete_Status_, 
-                 'ADMIN',
-                Slot_Id_,
+                Slot_Id_, 
                 Slot_Id_,
                 Batch_Id_
             );
         END IF;
-			END IF;
-    	END IF; 
+    END IF;
+
     -- Return the details
     SELECT Course_ID_, Student_ID_, course_Name_, student_Name_;
 END ;;
@@ -1714,21 +1616,21 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`%` PROCEDURE `Get_All_Time_Slot`(IN CourseID INT)
 BEGIN
-    SELECT MIN(tts.Slot_Id) AS Slot_Id, tts.start_time, tts.end_time,CourseID
+    SELECT 
+        tts.Slot_Id,
+        TIME_FORMAT(tts.start_time, '%h:%i %p') AS start_time,
+        TIME_FORMAT(tts.end_time, '%h:%i %p') AS end_time,
+        CourseID,
+        CONCAT(u.First_Name, ' ', u.Last_Name) AS Teacher_Name,
+        u.User_ID
     FROM teacher_time_slot tts
     JOIN course_teacher ct ON tts.CourseTeacher_ID = ct.CourseTeacher_ID
-    LEFT JOIN student_course sc ON tts.Slot_Id = sc.Slot_Id 
-        AND sc.Course_ID = ct.Course_ID 
-        AND sc.Delete_Status = 0
+    JOIN users u ON u.User_ID = ct.Teacher_ID
     WHERE ct.Course_ID = CourseID
-    and tts.Delete_Status=0 
-      AND ct.Delete_Status = 0
-    #  AND (
-    #    sc.Slot_Id IS NULL 
-     #   OR sc.Expiry_Date < CURDATE()
-    #  )
-      AND tts.batch_id IS NULL
-    GROUP BY tts.start_time, tts.end_time
+        AND tts.Delete_Status = 0
+        AND ct.Delete_Status = 0
+        AND u.Delete_Status = 0
+        AND tts.batch_id IS NULL
     ORDER BY tts.start_time;
 END ;;
 DELIMITER ;
@@ -2187,7 +2089,7 @@ WHERE sc.Student_ID = p_student_id
 
 -- Calculate the number of days passed since the batch started
 -- Added +2 to include one extra day (+1 for inclusive counting, +1 for unlocking next day)
-SELECT DATEDIFF(CURDATE(), STR_TO_DATE(v_start_date, '%Y-%m-%d')) + 2
+SELECT DATEDIFF(CURDATE(), STR_TO_DATE(v_start_date, '%Y-%m-%d')) + 1
 INTO v_days_passed;
 
 -- Fetch distinct day details with grouping, exam day status, and isToday
@@ -5788,10 +5690,11 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`root`@`%` PROCEDURE `Get_Teacher_Students`(
     IN user_id_ INT,
-    IN course_id_ INT -- New optional parameter
+    IN course_id_ INT
 )
 BEGIN 
-    SELECT 
+    -- Part 1: Students matched directly by Slot_Id (one-on-one or batch slots directly linked)
+    SELECT DISTINCT
         sc.StudentCourse_ID,
         sc.Student_ID,
         sc.Course_ID,
@@ -5811,27 +5714,62 @@ BEGIN
         tts.start_time,
         tts.end_time
     FROM 
-        teacher_time_slot tts
-    JOIN 
-        course_teacher ct ON tts.CourseTeacher_ID = ct.CourseTeacher_ID
-    LEFT JOIN 
-        student_course sc ON sc.Slot_Id = tts.Slot_Id
-    LEFT JOIN 
-        course c ON c.Course_ID = sc.Course_ID
-    LEFT JOIN 
-        course_batch cb ON cb.Batch_ID = sc.Batch_ID
-    LEFT JOIN 
-        student s ON sc.Student_ID = s.Student_ID
-    LEFT JOIN 
-        users u ON u.User_ID = ct.Teacher_ID
+        course_teacher ct
+    JOIN users u ON u.User_ID = ct.Teacher_ID
+    JOIN teacher_time_slot tts ON tts.CourseTeacher_ID = ct.CourseTeacher_ID
+    JOIN student_course sc ON sc.Slot_Id = tts.Slot_Id
+    JOIN course c ON c.Course_ID = sc.Course_ID
+    LEFT JOIN course_batch cb ON cb.Batch_ID = sc.Batch_ID
+    JOIN student s ON sc.Student_ID = s.Student_ID
     WHERE 
         u.User_ID = user_id_
         AND sc.Expiry_Date > CURDATE()
         AND sc.Delete_Status = FALSE 
-        AND s.Delete_Status = false 
-        AND ct.Delete_Status = False 
-        AND tts.Delete_Status = false
-        AND (course_id_ = 0 OR sc.Course_ID = course_id_); -- Added course filter
+        AND s.Delete_Status = FALSE
+        AND ct.Delete_Status = FALSE 
+        AND tts.Delete_Status = FALSE
+        AND c.Delete_Status = FALSE
+        AND (course_id_ = 0 OR sc.Course_ID = course_id_)
+
+    UNION
+
+    -- Part 2: Students matched by Batch_ID via course_batch (teacher teaches the course, student enrolled in its batch)
+    SELECT DISTINCT
+        sc.StudentCourse_ID,
+        sc.Student_ID,
+        sc.Course_ID,
+        c.Course_Name,
+        s.First_Name,
+        s.Last_Name,
+        sc.Enrollment_Date,
+        sc.Expiry_Date,
+        sc.Price,
+        sc.Payment_Date,
+        sc.Payment_Status,
+        sc.LastAccessed_Content_ID,
+        sc.Transaction_Id,
+        sc.Delete_Status,
+        sc.Payment_Method,
+        cb.Batch_Name,
+        tts.start_time,
+        tts.end_time
+    FROM 
+        course_teacher ct
+    JOIN users u ON u.User_ID = ct.Teacher_ID
+    JOIN teacher_time_slot tts ON tts.CourseTeacher_ID = ct.CourseTeacher_ID
+    JOIN course_batch cb ON cb.Course_ID = ct.Course_ID AND cb.Delete_Status = FALSE
+    JOIN student_course sc ON sc.Batch_ID = cb.Batch_ID AND sc.Course_ID = ct.Course_ID
+    JOIN course c ON c.Course_ID = sc.Course_ID
+    JOIN student s ON sc.Student_ID = s.Student_ID
+    WHERE 
+        u.User_ID = user_id_
+        AND sc.Expiry_Date > CURDATE()
+        AND sc.Delete_Status = FALSE 
+        AND s.Delete_Status = FALSE
+        AND ct.Delete_Status = FALSE 
+        AND tts.Delete_Status = FALSE
+        AND c.Delete_Status = FALSE
+        AND (course_id_ = 0 OR sc.Course_ID = course_id_);
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;

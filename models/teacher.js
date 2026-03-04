@@ -38,6 +38,9 @@ var teacher =
     Get_Batch_StudentList: async function (Batch_Id) {
         return executeTransaction('Get_Batch_StudentList', [Batch_Id]);
     },
+    Get_Faculty_Batch_Students: async function (teacher_Id_) {
+        return executeTransaction('Get_Faculty_Batch_Students', [teacher_Id_]);
+    },
     Save_LiveClass: async function (Liveclass) {
         return executeTransaction('Save_LiveClass', [
             Liveclass.LiveClass_ID,

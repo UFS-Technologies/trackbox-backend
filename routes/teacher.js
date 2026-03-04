@@ -44,6 +44,14 @@ router.get('/Get_teacherBatch_of_oneOnOne/:teacher_Id_?', async (req, res, next)
     }
 });
 
+router.get('/Get_Faculty_Batch_Students/:teacher_Id_?', async (req, res, next) => {
+    try {
+        const rows = await teacher.Get_Faculty_Batch_Students(req.params.teacher_Id_);
+        res.json(rows);
+    } catch (e) {
+        res.status(500).json({ success: false, message: 'Failed to get faculty batch students', error: e.message });
+    }
+});
 router.get('/Get_OnGoing_liveClass?', async (req, res, next) => {
     try {
         const rows = await teacher.Get_OnGoing_liveClass(req.userId);
