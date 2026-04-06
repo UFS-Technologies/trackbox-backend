@@ -19,7 +19,8 @@ var user = {
             JSON.stringify(user.Course_ID),
             user.Hod,
             JSON.stringify(user.teacherCourses),
-            user.Registered_Date
+            user.Registered_Date,
+            user.Address
         ]);
     },
 

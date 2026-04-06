@@ -7819,7 +7819,9 @@ CREATE DEFINER=`root`@`%` PROCEDURE `Save_User`(
     IN Profile_Photo_Path_ LONGTEXT,
     IN Course_IDs_ JSON,  -- JSON array of course IDs
     IN Hod_ BOOLEAN,
-	IN teacherCourses JSON
+	IN teacherCourses JSON,
+    IN Registered_Date_ LONGTEXT,
+    IN Address_ TEXT
 
 )
 BEGIN
@@ -7892,12 +7894,14 @@ BEGIN
                 Device_ID = Device_ID_,
                 Profile_Photo_Name = Profile_Photo_Name_,
                 Profile_Photo_Path = Profile_Photo_Path_,
-                password = password_
+                password = password_,
+                Registered_Date = Registered_Date_,
+                Address = Address_
             WHERE User_ID = User_ID_;
         ELSE
             -- Insert new user
-            INSERT INTO users (First_Name, Last_Name, Email, PhoneNumber, Delete_Status, User_Type_Id, User_Role_Id, password, Profile_Photo_Name, Profile_Photo_Path, Device_ID)
-            VALUES (First_Name_, Last_Name_, Email_, PhoneNumber_, Delete_Status_, User_Type_Id_, User_Role_Id_, password_, Profile_Photo_Name_, Profile_Photo_Path_, Device_ID_);
+            INSERT INTO users (First_Name, Last_Name, Email, PhoneNumber, Delete_Status, User_Type_Id, User_Role_Id, password, Profile_Photo_Name, Profile_Photo_Path, Device_ID, Registered_Date, Address)
+            VALUES (First_Name_, Last_Name_, Email_, PhoneNumber_, Delete_Status_, User_Type_Id_, User_Role_Id_, password_, Profile_Photo_Name_, Profile_Photo_Path_, Device_ID_, Registered_Date_, Address_);
             SET User_ID_ = LAST_INSERT_ID();
         END IF;
 

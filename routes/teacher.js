@@ -336,4 +336,19 @@ router.post('/Edit_Teacher_Experience', async (req, res, next) => {
     }
 });
 
+router.get('/Get_VideoAttendance_Report', async (req, res) => {
+    try {
+        const { Course_ID, Content_ID, Month, Student_ID } = req.query;
+        // Import course model if not already available in this scope, 
+        // but it's better to use the already required one or require it at the top.
+        // Assuming 'course' needs to be required as it's not in teacher.js yet.
+        const course = require('../models/course'); 
+        const rows = await course.Get_VideoAttendance(Student_ID || 0, Course_ID, Content_ID, Month, req.userId);
+        res.status(200).json({ success: true, rows: rows });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, error: 'An error occurred while fetching video attendance report' });
+    }
+});
+
 module.exports = router;

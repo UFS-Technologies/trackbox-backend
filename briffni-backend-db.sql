@@ -1429,6 +1429,7 @@ CREATE TABLE `users` (
   `Delete_Status` tinyint DEFAULT NULL,
   `User_Type_Id` int DEFAULT NULL,
   `User_Role_Id` int DEFAULT NULL,
+  `Address` text,
   `User_Active_Status` int DEFAULT NULL,
   `OTP` varchar(45) DEFAULT NULL,
   `password` varchar(45) DEFAULT NULL,

@@ -198,8 +198,8 @@ router.post('/Save_VideoAttendance', async (req, res) => {
 router.get('/Get_VideoAttendance/:Student_ID?', async (req, res) => {
     try {
         const Student_ID = req.params.Student_ID || req.query.Student_ID;
-        const { Course_ID, Content_ID, Month } = req.query;
-        const rows = await course.Get_VideoAttendance(Student_ID, Course_ID, Content_ID, Month);
+        const { Course_ID, Content_ID, Month, Teacher_ID: queryTeacherID } = req.query;
+        const rows = await course.Get_VideoAttendance(Student_ID, Course_ID, Content_ID, Month, queryTeacherID);
         res.status(200).json({ success: true, rows: rows });
     } catch (error) {
         console.error(error);
