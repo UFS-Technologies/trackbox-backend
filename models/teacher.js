@@ -118,5 +118,11 @@ var teacher =
             experience.Years_Of_Experience
         ]);
     },
+    Save_Staff_Attendance: async function (userId) {
+        return executeTransaction('Save_Staff_Attendance', [userId]);
+    },
+    Get_Staff_Attendance: async function (date) {
+        return executeTransaction('Get_Staff_Attendance', [date]);
+    },
 };
 module.exports = teacher;

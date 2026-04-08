@@ -351,4 +351,31 @@ router.get('/Get_VideoAttendance_Report', async (req, res) => {
     }
 });
 
+router.post('/Save_Staff_Attendance', async (req, res) => {
+    try {
+        const userId = req.body.User_ID || req.userId; // fallback to token
+        if (!userId) {
+            return res.status(400).json({ success: false, message: 'User_ID is required' });
+        }
+        const rows = await teacher.Save_Staff_Attendance(userId);
+        res.status(200).json({ success: true, rows: rows });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, error: 'An error occurred while saving staff attendance' });
+    }
+    console.log('req.body: ', req.body);
+});
+
+router.get('/Get_Staff_Attendance', async (req, res) => {
+    try {
+        const { date } = req.query; // optional date filter
+        const rows = await teacher.Get_Staff_Attendance(date || null);
+        res.status(200).json({ success: true, rows: rows });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, error: 'An error occurred while fetching staff attendance' });
+    }
+    console.log('req.query: ', req.query);
+});
+
 module.exports = router;
