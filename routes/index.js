@@ -102,5 +102,32 @@ router.post('/save_oneToOne_recording/', async (req, res, next) => {
     }
 });
 
+router.get('/Get_AppPosters', async (req, res, next) => {
+    try {
+        const rows = await Public.Get_AppPosters();
+        res.json(rows);
+    } catch (e) {
+        res.status(500).json({ success: false, message: 'Failed to get posters', error: e.message });
+    }
+});
+
+router.post('/Save_AppPoster', async (req, res, next) => {
+    try {
+        const rows = await Public.Save_AppPoster(req.body);
+        res.json(rows);
+    } catch (e) {
+        res.status(500).json({ success: false, message: 'Failed to save poster', error: e.message });
+    }
+});
+
+router.post('/Delete_AppPoster', async (req, res, next) => {
+    try {
+        const rows = await Public.Delete_AppPoster(req.body.id);
+        res.json(rows);
+    } catch (e) {
+        res.status(500).json({ success: false, message: 'Failed to delete poster', error: e.message });
+    }
+});
+
 module.exports = router;
  
