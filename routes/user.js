@@ -200,7 +200,9 @@ router.get('/Search_user/', async (req, res, next) => {
       slot_wise,          // Filter for slot-wise teachers
       batch_wise,         // Filter for batch-wise teachers
       course_id,          // Filter by course ID
-      hod_only           // Filter for HODs
+      hod_only,           // Filter for HODs
+      page,
+      pageSize
     } = req.query;
 
     // Convert string values to appropriate types
@@ -209,7 +211,9 @@ router.get('/Search_user/', async (req, res, next) => {
       slot_wise: slot_wise === 'true' ? true : (slot_wise === 'false' ? false : null),
       batch_wise: batch_wise === 'true' ? true : (batch_wise === 'false' ? false : null),
       course_id: course_id ? parseInt(course_id) : null,
-      hod_only: hod_only === 'true' ? true : (hod_only === 'false' ? false : null)
+      hod_only: hod_only === 'true' ? true : (hod_only === 'false' ? false : null),
+      page: page ? parseInt(page) : 1,
+      pageSize: pageSize ? parseInt(pageSize) : 25
     };
 
     const rows = await user.Search_user(params);

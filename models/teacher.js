@@ -1,5 +1,5 @@
 var fs = require('fs');
-const { executeTransaction } = require('../helpers/sp-caller');
+const { executeTransaction, getmultipleSP } = require('../helpers/sp-caller');
 var teacher =
 {
 
@@ -121,8 +121,12 @@ var teacher =
     Save_Staff_Attendance: async function (userId) {
         return executeTransaction('Save_Staff_Attendance', [userId]);
     },
-    Get_Staff_Attendance: async function (date) {
-        return executeTransaction('Get_Staff_Attendance', [date]);
+    Get_Staff_Attendance: async function (date, page, pageSize) {
+        return getmultipleSP('Get_Staff_Attendance', [
+            date || null,
+            page || 1,
+            pageSize || 25
+        ]);
     },
 };
 module.exports = teacher;

@@ -46,20 +46,43 @@ END //
 
 DROP PROCEDURE IF EXISTS Get_Staff_Attendance //
 CREATE PROCEDURE Get_Staff_Attendance(
-    IN p_Date DATE
+    IN p_Date DATE,
+    IN p_page INT,
+    IN p_pageSize INT
 )
 BEGIN
+    DECLARE v_offset INT;
+    SET p_page = IFNULL(p_page, 1);
+    SET p_pageSize = IFNULL(p_pageSize, 10);
+    IF p_page < 1 THEN SET p_page = 1; END IF;
+    SET v_offset = (p_page - 1) * p_pageSize;
+
+    -- Get Total Count
+    IF p_Date IS NULL THEN
+        SELECT COUNT(*) AS total_count
+        FROM Staff_Attendance sa
+        JOIN users u ON sa.User_ID = u.User_ID;
+    ELSE
+        SELECT COUNT(*) AS total_count
+        FROM Staff_Attendance sa
+        JOIN users u ON sa.User_ID = u.User_ID
+        WHERE sa.Attendance_Date = p_Date;
+    END IF;
+
+    -- Get Paginated Data
     IF p_Date IS NULL THEN
         SELECT sa.*, u.First_Name, u.Last_Name, u.PhoneNumber
         FROM Staff_Attendance sa
         JOIN users u ON sa.User_ID = u.User_ID
-        ORDER BY sa.Attendance_Date DESC, sa.Check_In_Time DESC;
+        ORDER BY sa.Attendance_Date DESC, sa.Check_In_Time DESC
+        LIMIT p_pageSize OFFSET v_offset;
     ELSE
         SELECT sa.*, u.First_Name, u.Last_Name, u.PhoneNumber
         FROM Staff_Attendance sa
         JOIN users u ON sa.User_ID = u.User_ID
         WHERE sa.Attendance_Date = p_Date
-        ORDER BY sa.Check_In_Time DESC;
+        ORDER BY sa.Check_In_Time DESC
+        LIMIT p_pageSize OFFSET v_offset;
     END IF;
 END //
 

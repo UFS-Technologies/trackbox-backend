@@ -198,10 +198,20 @@ router.post('/Save_VideoAttendance', async (req, res) => {
 router.get('/Get_VideoAttendance/:Student_ID?', async (req, res) => {
     try {
         const Student_ID = req.params.Student_ID || req.query.Student_ID;
-        const { Course_ID, Content_ID, Month, Teacher_ID: queryTeacherID } = req.query;
-        const rows = await course.Get_VideoAttendance(Student_ID, Course_ID, Content_ID, Month, queryTeacherID);
+        const { Course_ID, Content_ID, Month, Batch_ID, Teacher_ID: queryTeacherID, page, pageSize } = req.query;
+        const rows = await course.Get_VideoAttendance(
+            Student_ID, 
+            Course_ID, 
+            Content_ID, 
+            Month, 
+            queryTeacherID, 
+            Batch_ID,
+            page ? parseInt(page) : 1,
+            pageSize ? parseInt(pageSize) : 25
+        );
         res.status(200).json({ success: true, rows: rows });
-    } catch (error) {
+    }
+ catch (error) {
         console.error(error);
         res.status(500).json({ success: false, error: 'An error occurred while fetching video attendance' });
     }

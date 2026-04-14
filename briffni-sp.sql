@@ -5648,31 +5648,45 @@ DELIMITER ;;
 CREATE DEFINER=`root`@`%` PROCEDURE `Get_Teacher_courses_With_Batch`(IN user_Id_ INT)
 BEGIN 
   SELECT 
-    ct.CourseTeacher_ID, 
-    ct.Course_ID,  
-    c.Course_Name,
-    tts.Batch_ID,
-    b.Start_Date,
-    b.End_Date,
-    b.Batch_Name,
-    tts.Slot_Id,
-    TIME_FORMAT(tts.start_time, '%h:%i %p') AS start_time,
-    TIME_FORMAT(tts.end_time, '%h:%i %p') AS end_time
-FROM 
-    course_teacher ct 
-    INNER JOIN teacher_time_slot tts 
-        ON tts.CourseTeacher_ID = ct.CourseTeacher_ID
-    INNER JOIN course c 
-        ON ct.Course_ID = c.Course_ID
-    LEFT JOIN course_batch b 
-        ON tts.Batch_ID = b.Batch_ID
-WHERE 
-    ct.Teacher_ID = user_Id_
-    AND ct.Delete_Status = FALSE 
-    AND tts.Delete_Status = FALSE 
-    AND c.Delete_Status = FALSE 
-    AND (b.Batch_ID IS NULL OR b.Delete_Status = FALSE)
-      ORDER BY tts.start_time;
+    MIN(CourseTeacher_ID) as CourseTeacher_ID,
+    Course_ID,  
+    Course_Name,
+    Batch_Name
+  FROM (
+      SELECT 
+        ct.CourseTeacher_ID, 
+        ct.Course_ID,  
+        c.Course_Name,
+        COALESCE(b.Batch_Name, (
+            SELECT GROUP_CONCAT(DISTINCT cb2.Batch_Name SEPARATOR ', ')
+            FROM student_course sc 
+            JOIN course_batch cb2 ON sc.Batch_ID = cb2.Batch_ID
+            WHERE sc.Slot_Id = tts.Slot_Id 
+            AND sc.Course_ID = ct.Course_ID
+            AND sc.Delete_Status = FALSE 
+            AND sc.Expiry_Date > CURDATE() 
+            AND cb2.Delete_Status = FALSE
+        )) as Batch_Name
+    FROM 
+        course_teacher ct 
+        INNER JOIN teacher_time_slot tts 
+            ON tts.CourseTeacher_ID = ct.CourseTeacher_ID
+        INNER JOIN course c 
+            ON ct.Course_ID = c.Course_ID
+        LEFT JOIN course_batch b 
+            ON tts.Batch_ID = b.Batch_ID
+    WHERE 
+        ct.Teacher_ID = user_Id_
+        AND ct.Delete_Status = FALSE 
+        AND tts.Delete_Status = FALSE 
+        AND c.Delete_Status = FALSE 
+        AND (b.Batch_ID IS NULL OR b.Delete_Status = FALSE)
+  ) as sub
+  GROUP BY 
+    Course_ID, 
+    Course_Name,
+    Batch_Name
+  ORDER BY Course_Name;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -8487,12 +8501,94 @@ CREATE DEFINER=`root`@`%` PROCEDURE `Search_User`(
     IN filter_slot_wise BOOLEAN,     
     IN filter_batch_wise BOOLEAN,    
     IN filter_course_id INT,         
-    IN filter_hod_only BOOLEAN       
+    IN filter_hod_only BOOLEAN,
+    IN p_page INT,
+    IN p_pageSize INT
 )
 BEGIN
+    DECLARE v_offset INT;
+    SET p_page = IFNULL(p_page, 1);
+    SET p_pageSize = IFNULL(p_pageSize, 10);
+    IF p_page < 1 THEN SET p_page = 1; END IF;
+    SET v_offset = (p_page - 1) * p_pageSize;
+
     -- Add wildcards to enable partial matching
     SET First_Name_ = CONCAT('%', First_Name_, '%');
+
+    -- Get Total Count
+    SELECT COUNT(DISTINCT u.User_ID) AS total_count
+    FROM users u
+    LEFT JOIN (
+        SELECT ch.User_ID, ch.Course_ID
+        FROM course_hod ch
+        JOIN course c ON c.Course_ID = ch.Course_ID
+        WHERE c.Delete_Status = FALSE
+    ) ch ON u.User_ID = ch.User_ID
+    LEFT JOIN 
+        course c ON c.Course_ID = ch.Course_ID AND c.Delete_Status = FALSE
+    WHERE  
+        (u.First_Name LIKE First_Name_ OR 
+         u.Last_Name LIKE First_Name_ OR 
+         u.Email LIKE First_Name_ OR
+         CONCAT(u.First_Name, ' ', u.Last_Name) LIKE First_Name_ OR
+         CONCAT(u.Last_Name, ' ', u.First_Name) LIKE First_Name_) 
+        AND u.Delete_Status = FALSE 
+        AND u.User_Type_Id != 1
+        AND (filter_slot_wise IS NULL OR 
+             EXISTS (
+                SELECT 1 
+                FROM course_teacher ct 
+                INNER JOIN teacher_time_slot tts ON ct.CourseTeacher_ID = tts.CourseTeacher_ID
+                WHERE ct.Teacher_ID = u.User_ID 
+                AND tts.Batch_ID IS NULL 
+                AND ct.Delete_Status = FALSE
+                AND tts.Delete_Status = FALSE
+             ) = filter_slot_wise)
+        AND (filter_batch_wise IS NULL OR 
+             EXISTS (
+                SELECT 1 
+                FROM course_teacher ct 
+                INNER JOIN teacher_time_slot tts ON ct.CourseTeacher_ID = tts.CourseTeacher_ID
+                INNER JOIN course_batch cb on cb.Batch_ID = tts.batch_id
+                WHERE ct.Teacher_ID = u.User_ID 
+                AND tts.Batch_ID IS NOT NULL 
+                AND ct.Delete_Status = FALSE
+                AND tts.Delete_Status = FALSE
+                AND cb.Delete_Status = false
+             ) = filter_batch_wise)
+        AND (filter_course_id = 0 OR 
+            EXISTS (
+                SELECT 1 
+                FROM course_hod ch
+                JOIN course c ON c.Course_ID = ch.Course_ID
+                WHERE ch.User_ID = u.User_ID 
+                AND ch.Course_ID = filter_course_id
+                AND c.Delete_Status = FALSE
+            ) OR
+            EXISTS (
+                SELECT 1 
+                FROM course_teacher ct 
+                JOIN teacher_time_slot tts ON tts.CourseTeacher_ID = ct.CourseTeacher_ID
+                LEFT JOIN course_batch cb ON cb.Batch_ID = tts.batch_id
+                WHERE ct.Teacher_ID = u.User_ID 
+                AND ct.Course_ID = filter_course_id
+                AND ct.Delete_Status = FALSE
+                AND tts.Delete_Status = FALSE
+                AND (
+                    (tts.batch_id IS NOT NULL AND cb.Delete_Status = FALSE)
+                    OR
+                    tts.batch_id IS NULL
+                )
+            )
+        )
+        AND (filter_hod_only IS NULL OR 
+             EXISTS (
+                SELECT 1 
+                FROM course_hod ch 
+                WHERE ch.User_ID = u.User_ID
+             ) = filter_hod_only);
     
+    -- Get Paginated Data
     SELECT 
         u.*, 
         IF(
@@ -8602,7 +8698,8 @@ BEGIN
     GROUP BY 
         u.User_ID
     ORDER BY 
-        u.User_ID DESC;
+        u.User_ID DESC
+    LIMIT p_pageSize OFFSET v_offset;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;

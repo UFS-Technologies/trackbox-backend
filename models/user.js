@@ -54,19 +54,23 @@ var user = {
             slot_wise,
             batch_wise,
             course_id,
-            hod_only
+            hod_only,
+            page,
+            pageSize
         } = params;
 
         // Handle undefined search term
         const searchTerm = user_Name === undefined || user_Name === 'undefined' ? '' : user_Name;
 
         // Pass all parameters to the stored procedure
-        return executeTransaction('Search_User', [
+        return getmultipleSP('Search_User', [
             searchTerm,
             slot_wise,
             batch_wise,
             course_id,
-            hod_only
+            hod_only,
+            page || 1,
+            pageSize || 25
         ]);
     },
     Get_Dashboard: async function () {

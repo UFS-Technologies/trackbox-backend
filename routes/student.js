@@ -634,7 +634,9 @@ router.get('/Get_Exam_Results/:student_id', async (req, res, next) => {
     try {
         const student_id = req.params.student_id;
         const course_id = req.query.course_id || null;
-        const rows = await student.Get_Exam_Results_By_Student(student_id, course_id);
+        const page = parseInt(req.query.page) || 1;
+        const pageSize = parseInt(req.query.pageSize) || 25;
+        const rows = await student.Get_Exam_Results_By_Student(student_id, course_id, page, pageSize);
         res.json(rows);
     }
     catch (e) {

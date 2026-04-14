@@ -96,8 +96,17 @@ var course = {
     Save_VideoAttendance: async function (studentId, courseId, contentId) {
         return executeTransaction('Save_VideoAttendance', [studentId, courseId, contentId]);
     },
-    Get_VideoAttendance: async function (studentId, courseId, contentId, month, teacherId) {
-        return executeTransaction('Get_VideoAttendance', [studentId || 0, courseId || 0, contentId || 0, month || '', teacherId || 0]);
+    Get_VideoAttendance: async function (studentId, courseId, contentId, month, teacherId, batchId, page, pageSize) {
+        return getmultipleSP('Get_VideoAttendance', [
+            studentId || 0,
+            courseId || 0,
+            contentId || 0,
+            month || '',
+            teacherId || 0,
+            batchId || 0,
+            page || 1,
+            pageSize || 25
+        ]);
     },
     Get_course_content_By_Module: async function (course_Id_, Module_ID_) {
         return getmultipleSP('Get_course_content_By_Module', [course_Id_, Module_ID_]);

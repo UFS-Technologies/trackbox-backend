@@ -89,9 +89,25 @@ DROP PROCEDURE IF EXISTS Get_Exam_Results_By_Student$$
 
 CREATE PROCEDURE Get_Exam_Results_By_Student(
     IN p_student_id INT,
-    IN p_course_id INT
+    IN p_course_id INT,
+    IN p_page INT,
+    IN p_pageSize INT
 )
 BEGIN
+    DECLARE v_offset INT;
+    
+    SET p_page = IFNULL(p_page, 1);
+    SET p_pageSize = IFNULL(p_pageSize, 10);
+    IF p_page < 1 THEN SET p_page = 1; END IF;
+    SET v_offset = (p_page - 1) * p_pageSize;
+
+    -- Get total count
+    SELECT COUNT(*) AS total_count
+    FROM exam_result_master erm
+    WHERE (p_student_id = 0 OR erm.student_id = p_student_id)
+    AND (p_course_id IS NULL OR p_course_id = 0 OR erm.course_id = p_course_id);
+
+    -- Get paginated data
     SELECT 
         erm.exam_result_master_id,
         erm.student_id,
@@ -118,7 +134,8 @@ BEGIN
     INNER JOIN exam_data ed ON erm.exam_data_id = ed.exam_data_id
     WHERE (p_student_id = 0 OR erm.student_id = p_student_id)
     AND (p_course_id IS NULL OR p_course_id = 0 OR erm.course_id = p_course_id)
-    ORDER BY erm.created_at DESC;
+    ORDER BY erm.created_at DESC
+    LIMIT p_pageSize OFFSET v_offset;
 END$$
 
 DELIMITER ;

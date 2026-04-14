@@ -368,8 +368,12 @@ router.post('/Save_Staff_Attendance', async (req, res) => {
 
 router.get('/Get_Staff_Attendance', async (req, res) => {
     try {
-        const { date } = req.query; // optional date filter
-        const rows = await teacher.Get_Staff_Attendance(date || null);
+        const { date, page, pageSize } = req.query; // optional date filter
+        const rows = await teacher.Get_Staff_Attendance(
+            date || null,
+            page ? parseInt(page) : 1,
+            pageSize ? parseInt(pageSize) : 25
+        );
         res.status(200).json({ success: true, rows: rows });
     } catch (error) {
         console.error(error);

@@ -204,10 +204,12 @@ var student =
             examResult.obtained_mark
         ]);
     },
-    Get_Exam_Results_By_Student: async function (student_id, course_id) {
-        return executeTransaction('Get_Exam_Results_By_Student', [
+    Get_Exam_Results_By_Student: async function (student_id, course_id, page, pageSize) {
+        return getmultipleSP('Get_Exam_Results_By_Student', [
             student_id,
-            course_id || null
+            course_id || null,
+            page || 1,
+            pageSize || 25
         ]);
     },
 };
